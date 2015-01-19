@@ -41,6 +41,10 @@ void ServerApp::Loop()
 		switch (msgid)
 		{
 		case ID_NEW_INCOMING_CONNECTION:
+			if(newID >= 3)
+			{
+				SendGetOutPacket(packet->systemAddress);
+			}
 			SendWelcomePackage(packet->systemAddress);
 			break;
 
@@ -121,6 +125,21 @@ void ServerApp::SendWelcomePackage(SystemAddress& addr)
 	clients_.insert(std::make_pair(addr, newobject));
 
 	std::cout << "New guy, assigned id " << newID << std::endl;
+}
+
+void ServerApp::SendGetOutPacket(SystemAddress& addr)
+{
+	unsigned int shipcount = static_cast<unsigned int>(clients_.size());
+	unsigned char msgid = ID_GetOut;
+	
+	RakNet::BitStream bs;
+	bs.Write(msgid);
+
+	rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED,0, addr, false);
+
+	bs.Reset();
+
+	std::cout << "New guy, kicked out " << newID << std::endl;
 }
 
 void ServerApp::SendDisconnectionNotification(SystemAddress& addr)

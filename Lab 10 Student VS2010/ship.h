@@ -112,6 +112,8 @@ public:
 		return false;
 	}
 
+	int ShipHP;
+
 	// Lab Task 2 : add new member functions here
 #ifdef INTERPOLATEMOVEMENT
 	void SetServerLocation( float x, float y, float w ) { 

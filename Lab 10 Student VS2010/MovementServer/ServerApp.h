@@ -30,10 +30,10 @@ class ServerApp
 	unsigned int newID;
 	
 	void SendWelcomePackage(SystemAddress& addr);
+	void SendGetOutPacket(SystemAddress& addr);
 	void SendDisconnectionNotification(SystemAddress& addr);
 	void ProcessInitialPosition( SystemAddress& addr, float x_, float y_, int type_);
 	void UpdatePosition( SystemAddress& addr, float x_, float y_ );
-
 public:
 	ServerApp();
 	~ServerApp();

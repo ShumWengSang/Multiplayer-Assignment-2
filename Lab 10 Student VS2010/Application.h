@@ -5,6 +5,7 @@
 #include "missile.h"
 #include <vector>
 #include "RakPeerInterface.h"
+#include "hge16\include\hgefont.h"
 
 class HGE;
 using namespace RakNet;
@@ -24,6 +25,7 @@ static const float DEFAULT_ACCELERATION = 50.0f;
 class Application
 {
 	HGE* hge_; //!< Instance of the internal graphics engine
+	hgeFont * fnt;
 	typedef std::vector<Ship*> ShipList;  //!< A list of ships
 	ShipList ships_; //!< List of all the ships in the universe
 	RakPeerInterface* rakpeer_;
@@ -44,7 +46,10 @@ class Application
 	void CreateMissile( float x, float y, float w, int id );
 
 	void SendCollision( Ship* ship );
-
+	bool Receive();
+	void Send();
+	bool Keyboard(float);
+	bool Exit;
 public:
 	Application();
 	~Application() throw();

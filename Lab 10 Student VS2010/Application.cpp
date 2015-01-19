@@ -35,9 +35,11 @@ Application::Application()
 :	hge_(hgeCreate(HGE_VERSION))
 ,	rakpeer_(RakPeerInterface::GetInstance())
 ,	timer_( 0 )
+,	Exit(false)
 // Lab 10 Task 2 : add new initializations
 
 {
+	fnt = new hgeFont("font1.fnt");
 }
 
 /**
@@ -50,6 +52,11 @@ Application::~Application() throw()
 {
 	Shutdown();
 	rakpeer_->Shutdown(100);
+	if(fnt != NULL)
+	{
+		delete fnt;
+		fnt = NULL;
+	}
 	RakPeerInterface::DestroyInstance(rakpeer_);
 }
 
@@ -102,15 +109,11 @@ bool Application::Init()
 *
 * Also calls Update() on all the ships in the universe
 */
-bool Application::Update()
+
+bool Application::Keyboard(float timedelta)
 {
 	if (hge_->Input_GetKeyState(HGEK_ESCAPE))
 		return true;
-
-	float timedelta = hge_->Timer_GetDelta();
-
-	ships_.at(0)->SetAngularVelocity( 0.0f );
-
 	if (hge_->Input_GetKeyState(HGEK_LEFT))
 	{
 		ships_.at(0)->SetAngularVelocity( ships_.at(0)->GetAngularVelocity() - DEFAULT_ANGULAR_VELOCITY );
@@ -130,31 +133,66 @@ bool Application::Update()
 	{
 		ships_.at(0)->Accelerate(-DEFAULT_ACCELERATION, timedelta);
 	}
-
-	// Lab 10 Task 4 : Add a key to shoot missiles
-	
-
-
-	for (ShipList::iterator ship = ships_.begin();
-		ship != ships_.end(); ship++)
+	return false;
+}
+bool Application::Update()
+{
+	if(Exit)
 	{
-		(*ship)->Update(timedelta);
-
-		//collisions
-		if( (*ship) == ships_.at(0) )
-			checkCollisions( (*ship) );
+		fnt->Render(20, 20, HGETEXT_LEFT, "Max players reached.");
+		static float time = hge_->Timer_GetTime();
+		if(hge_->Timer_GetTime() - time <= 3)
+		{
+			return true;
+		}
 	}
+	else
+	{
+		float timedelta = hge_->Timer_GetDelta();
+		if(Keyboard(timedelta))
+			return true;
 
-	// Lab 10 Task 5 : Updating the missile
-	
+		ships_.at(0)->SetAngularVelocity( 0.0f );
 
-	// Lab 10 Task 13 : Update network missiles
-	
 
+
+		// Lab 10 Task 4 : Add a key to shoot missiles
+
+
+
+		for (ShipList::iterator ship = ships_.begin();
+			ship != ships_.end(); ship++)
+		{
+			(*ship)->Update(timedelta);
+
+			//collisions
+			if( (*ship) == ships_.at(0) )
+				checkCollisions( (*ship) );
+		}
+
+		// Lab 10 Task 5 : Updating the missile
+
+
+		// Lab 10 Task 13 : Update network missiles
+
+
+
+		if(Receive())
+		{
+			return true;
+		}
+		Send();
+
+		return false;
+	}
+}
+
+bool Application::Receive()
+{
 	if (Packet* packet = rakpeer_->Receive())
 	{
 		RakNet::BitStream bs(packet->data, packet->length, false);
-		
+
 		unsigned char msgid = 0;
 		RakNet::Time timestamp = 0;
 
@@ -210,6 +248,11 @@ bool Application::Update()
 			}
 			break;
 
+		case ID_GetOut:
+			{
+				Exit = true;
+			}
+			break;
 		case ID_NEWSHIP:
 			{
 				unsigned int id;
@@ -313,7 +356,7 @@ bool Application::Update()
 				unsigned int shipid;
 				float x, y;
 				bs.Read(shipid);
-				
+
 				if( shipid == ships_.at(0)->GetID() )
 				{
 					std::cout << "collided with someone!" << std::endl;
@@ -336,8 +379,8 @@ bool Application::Update()
 			break;
 
 
-		// Lab 10 Task 10 : new cases to handle missile on application side
-		
+			// Lab 10 Task 10 : new cases to handle missile on application side
+
 
 		default:
 			std::cout << "Unhandled Message Identifier: " << (int)msgid << std::endl;
@@ -345,7 +388,11 @@ bool Application::Update()
 		}
 		rakpeer_->DeallocatePacket(packet);
 	}
+	return false;
+}
 
+void Application::Send()
+{
 	if (RakNet::GetTime() - timer_ > 1000)
 	{
 		timer_ = (unsigned int)RakNet::GetTime();
@@ -377,10 +424,8 @@ bool Application::Update()
 
 
 		// Lab 10 Task 11 : send missile update 
-	
-	}
 
-	return false;
+	}
 }
 
 

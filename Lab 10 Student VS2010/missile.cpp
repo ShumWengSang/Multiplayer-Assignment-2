@@ -58,6 +58,13 @@ bool Missile::Update(std::vector<Ship*> &shiplist, float timedelta)
 	{
 		if( HasCollided( (*(*thisship)) ) )
 		{
+			(*thisship)->ShipHP -= 10;
+			if ((*thisship)->ShipHP <= 0)
+			{
+				delete *thisship;
+				shiplist.erase(thisship);
+				break;
+			}
 			return true;
 		}
 	}

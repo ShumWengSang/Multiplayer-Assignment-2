@@ -31,9 +31,15 @@ class Application
 	
 	// Lab 10 Task 1 : add variables for local missle
 
+	bool have_missile;
+	bool keydown_enter;
+
 
 	// Lab 10 Task 8 : add variables to handle networked missiles
-	
+	typedef std::vector<Missile*> MissileList;
+	MissileList missiles_;
+	MissileList mymissile;
+
 	bool Init();
 	static bool Loop();
 	void Shutdown();

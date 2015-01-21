@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Application.cpp">
+      <Filter>CPP</Filter>
+    </ClCompile>
+    <ClCompile Include="ship.cpp">
+      <Filter>CPP</Filter>
+    </ClCompile>
+    <ClCompile Include="missile.cpp">
+      <Filter>CPP</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>CPP</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Application.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="missile.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="ship.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="Globals.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="MyMsgIDs.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CPP">
+      <UniqueIdentifier>{a47b3f74-4e05-40d4-ad00-97374d6fb376}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header">
+      <UniqueIdentifier>{774166d8-3ebc-43db-85ea-c26c09436a5f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

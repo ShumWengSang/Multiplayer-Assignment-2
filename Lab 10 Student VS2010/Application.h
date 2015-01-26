@@ -12,7 +12,7 @@ using namespace RakNet;
 //! The default angular velocity of the ship when it is in motion
 static const float DEFAULT_ANGULAR_VELOCITY = 3.0f; 
 //! The default acceleration of the ship when powered
-static const float DEFAULT_ACCELERATION = 50.0f;
+static const float DEFAULT_ACCELERATION = 100.0f;
 
 /**
 * The application class is the main body of the program. It will
@@ -50,6 +50,10 @@ class Application
 
 	void SendCollision( Ship* ship );
 
+	bool Receive();
+	void Send();
+	bool Keyboard(float timedelta);
+
 public:
 	Application();
 	~Application() throw();
@@ -57,6 +61,9 @@ public:
 	void Start();
 	bool Update();
 	void Render();
+
+	unsigned int Time;
+	bool RecordedTime;
 };
 
 #endif

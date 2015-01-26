@@ -27,6 +27,7 @@ Ship::Ship(int type, float locx_, float locy_)
 ,	velocity_y_(0)
 ,	id(0)
 ,	collidetimer(0)
+,	ShipHP(100)
 #ifdef INTERPOLATEMOVEMENT
 ,	server_w_(0)
 ,	client_w_(0)
@@ -201,7 +202,7 @@ void Ship::Update(float timedelta)
 	if (ratio_ < 1)
 	{
 		// interpolating ratio step
-		ratio_ += timedelta *4;
+		ratio_ += timedelta * 2;
 		if (ratio_ > 1)
 			ratio_ = 1;
 	}
@@ -230,7 +231,7 @@ void Ship::Update(float timedelta)
 void Ship::Render()
 {
 
-	sprite_->RenderEx(x_, y_, w_);
+	sprite_->RenderEx(x_, y_, -1.57079);
 
 	font_->printf(x_+5, y_+5, HGETEXT_LEFT, "%s",
               mytext_.c_str());
@@ -248,8 +249,14 @@ void Ship::Accelerate(float acceleration, float timedelta)
 {
 	// Lab 7 Task 2 : Changes for interpolation
 #ifdef INTERPOLATEMOVEMENT
-	server_velx_ += acceleration * cosf(w_) * timedelta;
-	server_vely_ += acceleration * sinf(w_) * timedelta;
+	if(server_velx_ < 200 && server_velx_ > -200)
+		server_velx_ += acceleration * x_ * timedelta * 0.01;
+	else if(server_velx_ < 200)
+		server_velx_ = -199;
+	else if(server_velx_ > -200)
+		server_velx_ = 199;
+	std::cout << server_velx_ << std::endl;
+	//server_vely_ += acceleration * sinf(w_) * timedelta;
 #else
 	velocity_x_ += acceleration * cosf(w_) * timedelta;
 	velocity_y_ += acceleration * sinf(w_) * timedelta;

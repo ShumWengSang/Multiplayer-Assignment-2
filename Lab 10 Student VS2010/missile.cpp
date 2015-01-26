@@ -10,10 +10,12 @@ extern float GetAbsoluteMag( float num );
 Missile::Missile(char* filename, float x, float y, float w, int shipid ) :
 	angular_velocity(0)
 {
-	HGE* hge = hgeCreate(HGE_VERSION);
+	hge = hgeCreate(HGE_VERSION);
+	ExplosionTexture = hge->Texture_Load("boom.png");
 	tex_ = hge->Texture_Load(filename);
-	hge->Release();
+	//hge->Release();
 	sprite_.reset(new hgeSprite(tex_, 0, 0, 40, 20));
+	explosion_.reset(new hgeSprite(ExplosionTexture,0,0,40,40));
 	sprite_->SetHotSpot(20,10);
 	x_ = x;
 	y_ = y;
@@ -26,13 +28,16 @@ Missile::Missile(char* filename, float x, float y, float w, int shipid ) :
 	x_ += velocity_x_ * 0.5;
 	y_ += velocity_y_ * 0.5;
 
+	Explode = false;
+
 }
 
 Missile::~Missile()
 {
-	HGE* hge = hgeCreate(HGE_VERSION);
+	//HGE* hge = hgeCreate(HGE_VERSION);
 	hge->Texture_Free(tex_);
 	hge->Release();
+
 }
 
 bool Missile::Update(std::vector<Ship*> &shiplist, float timedelta)
@@ -53,11 +58,20 @@ bool Missile::Update(std::vector<Ship*> &shiplist, float timedelta)
 	x_ += velocity_x_ * timedelta;
 	y_ += velocity_y_ * timedelta;
 
+
 	for (std::vector<Ship*>::iterator thisship = shiplist.begin();
 		thisship != shiplist.end(); thisship++)
 	{
 		if( HasCollided( (*(*thisship)) ) )
 		{
+			if(!Explode)
+			{
+				Explode = true;
+				(*thisship)->ShipHP -= 10;
+				this->SetVelocityX(0);
+				this->SetVelocityY(0);
+
+			}
 			return true;
 		}
 	}
@@ -77,12 +91,17 @@ bool Missile::Update(std::vector<Ship*> &shiplist, float timedelta)
 	else if (y_ > screenheight + spriteheight/2)
 		y_ -= screenheight + spriteheight;
 
+
+
 	return false;
 }
 
 void Missile::Render()
 {
-	sprite_->RenderEx(x_, y_, w_);
+	if(!Explode)
+		sprite_->RenderEx(x_, y_, w_);
+	else
+		explosion_->RenderEx(x_,y_,w_);
 }
 
 bool Missile::HasCollided( Ship &ship )

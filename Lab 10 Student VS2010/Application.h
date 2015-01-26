@@ -30,10 +30,15 @@ class Application
 	unsigned int timer_;
 	
 	// Lab 10 Task 1 : add variables for local missle
-
+	Missile* mymissile;
+	bool have_missile;
+	bool keydown_enter;
 
 	// Lab 10 Task 8 : add variables to handle networked missiles
-	
+	typedef std::vector<Missile*> MissileList;
+	MissileList missiles_;
+
+
 	bool Init();
 	static bool Loop();
 	void Shutdown();

@@ -12,7 +12,7 @@
 
 // Lab 10 Task 9a : Uncomment the macro NETWORKMISSILE
 
-//#define NETWORKMISSLE
+#define NETWORKMISSLE
 
 
 float GetAbsoluteMag( float num )
@@ -36,6 +36,8 @@ Application::Application()
 ,	rakpeer_(RakPeerInterface::GetInstance())
 ,	timer_( 0 )
 // Lab 10 Task 2 : add new initializations
+,	mymissile(0)
+,	keydown_enter( false )
 
 {
 }
@@ -132,7 +134,22 @@ bool Application::Update()
 	}
 
 	// Lab 10 Task 4 : Add a key to shoot missiles
-	
+	if (hge_->Input_GetKeyState(HGEK_ENTER))
+	{
+		if( !keydown_enter )
+		{
+			CreateMissile(ships_.at(0)->GetX(), ships_.at(0)->GetY(), ships_.at(0)->GetW(), ships_.at(0)->GetID());  
+			keydown_enter = true;
+		}
+	}
+	else
+	{
+		if( keydown_enter )
+		{
+			keydown_enter = false;
+		}
+	}
+
 
 
 	for (ShipList::iterator ship = ships_.begin();
@@ -146,10 +163,30 @@ bool Application::Update()
 	}
 
 	// Lab 10 Task 5 : Updating the missile
-	
+	if( mymissile )
+	{
+		if( mymissile->Update( ships_, timedelta ) )
+		{
+			// have collision
+			delete mymissile;
+			mymissile = 0;
+		}
+	}
+
 
 	// Lab 10 Task 13 : Update network missiles
-	
+	for (MissileList::iterator missile = missiles_.begin();
+		missile != missiles_.end(); missile++)
+	{
+	 	if( (*missile)->Update(ships_, timedelta) )
+		{
+			// have collision
+			delete *missile;
+			missiles_.erase(missile);
+			break;
+		}
+	}
+
 
 	if (Packet* packet = rakpeer_->Receive())
 	{
@@ -338,6 +375,53 @@ bool Application::Update()
 
 		// Lab 10 Task 10 : new cases to handle missile on application side
 		
+			case ID_NEWMISSILE:
+	{
+		float x, y, w;
+		int id;
+
+		bs.Read(id);
+		bs.Read(x);
+		bs.Read(y);
+		bs.Read(w);
+
+		missiles_.push_back( new Missile( "missile.png", x, y, w, id ) );
+	}
+	break;
+	case ID_UPDATEMISSILE:
+	{
+		float x,y,w;
+		int id;
+		char deleted;
+
+		bs.Read(id);
+		bs.Read(deleted);
+
+		for (MissileList::iterator itr = missiles_.begin(); itr != missiles_.end(); ++itr)
+		{
+			if( (*itr)->GetOwnerID() == id )
+			{
+				if( deleted == 1)
+				{
+					delete *itr;
+					missiles_.erase(itr);
+				}
+				else
+				{
+					bs.Read( x );
+					bs.Read( y );
+					bs.Read( w );
+					(*itr)->UpdateLoc( x, y, w );
+					bs.Read( x );
+					(*itr)->SetVelocityX( x );
+					bs.Read( y );
+					(*itr)->SetVelocityY( y );
+				}
+				break;
+			}
+		}	
+	}
+	break;
 
 		default:
 			std::cout << "Unhandled Message Identifier: " << (int)msgid << std::endl;
@@ -377,7 +461,24 @@ bool Application::Update()
 
 
 		// Lab 10 Task 11 : send missile update 
-	
+	if( mymissile )
+{
+	RakNet::BitStream bs3;
+	unsigned char msgid2 = ID_UPDATEMISSILE;
+	unsigned char deleted = 0;
+	bs3.Write(msgid2);
+	bs3.Write(mymissile->GetOwnerID());
+	bs3.Write(deleted);
+	bs3.Write(mymissile->GetX());
+	bs3.Write(mymissile->GetY());
+	bs3.Write(mymissile->GetW());
+	bs3.Write(mymissile->GetVelocityX());
+	bs3.Write(mymissile->GetVelocityY());
+
+	rakpeer_->Send(&bs3, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+}
+
+
 	}
 
 	return false;
@@ -401,9 +502,18 @@ void Application::Render()
 	}
 
 	// Lab 10 Task 6 : Render the missile
+	if( mymissile )
+	{
+		mymissile->Render();
+	}
 
 	// Lab 10 Task 12 : Render network missiles
-	
+	MissileList::iterator itr2;
+	for (itr2 = missiles_.begin(); itr2 != missiles_.end(); itr2++)
+	{
+		(*itr2)->Render();
+	}
+
 	hge_->Gfx_EndScene();
 }
 
@@ -581,9 +691,51 @@ void Application::CreateMissile(float x, float y, float w, int id)
 {
 #ifdef NETWORKMISSLE
 	// Lab 10 Task 9b : Implement networked version of createmissile
-	
+	RakNet::BitStream bs;
+	unsigned char msgid;
+	unsigned char deleted=0;
+
+	if( mymissile )
+	{
+		// send update throughnetwork to delete this missile
+		deleted=1;
+		msgid = ID_UPDATEMISSILE;
+		bs.Write(msgid);
+		bs.Write(id);
+		bs.Write(deleted);
+		bs.Write(x);
+		bs.Write(y);
+		bs.Write(w);
+		rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+
+		// delete existing missile
+		delete mymissile;
+		mymissile = 0;		
+	}
+		
+	// add a new missile based on the following parameter coordinates
+	mymissile = new Missile("missile.png", x, y, w, id );
+// send network command to add new missile
+	bs.Reset();
+	msgid = ID_NEWMISSILE;
+	bs.Write(msgid);
+	bs.Write(id);
+	bs.Write(x);
+	bs.Write(y);
+	bs.Write(w);
+	rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+
 #else
 // Lab 10 Task 3 : Implement local version missile creation
-	
+		if( mymissile )
+	{
+		// delete existing missile
+		delete mymissile;
+		mymissile = 0;		
+	}
+		
+	// add a new missile based on the following parameter coordinates
+	mymissile = new Missile("missile.png", x, y, w, id );
+
 #endif
 }

@@ -27,7 +27,6 @@ Ship::Ship(int type, float locx_, float locy_)
 ,	velocity_y_(0)
 ,	id(0)
 ,	collidetimer(0)
-,	ShipHP(100)
 #ifdef INTERPOLATEMOVEMENT
 ,	server_w_(0)
 ,	client_w_(0)

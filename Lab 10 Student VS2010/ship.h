@@ -33,6 +33,7 @@ class Ship
 	float velocity_y_; //!< The resolved velocity of the ship along the y-axis
 
 	float oldx, oldy;	// for reset back to previous location if collision detected
+	bool RecordedTime;
 
 	// Lab Task 2 : add for interpolation
 #ifdef INTERPOLATEMOVEMENT

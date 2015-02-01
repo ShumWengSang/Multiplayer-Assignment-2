@@ -13,6 +13,7 @@ ServerApp::ServerApp() :
 	rakpeer_->SetMaximumIncomingConnections(100);
 	rakpeer_->SetOccasionalPing(true);
 	std::cout << "Server Started" << std::endl;
+	NumofPlayers = 0;
 }
 
 ServerApp::~ServerApp()
@@ -41,7 +42,10 @@ void ServerApp::Loop()
 		switch (msgid)
 		{
 		case ID_NEW_INCOMING_CONNECTION:
-			SendWelcomePackage(packet->systemAddress);
+			if (NumofPlayers < 2)
+				SendWelcomePackage(packet->systemAddress);
+			else
+				SendRejectPackage(packet->systemAddress);
 			break;
 
 		case ID_DISCONNECTION_NOTIFICATION:
@@ -90,11 +94,17 @@ void ServerApp::Loop()
 			}
 			break;
 		case ID_UPDATEMISSILE:
-			{
-				bs.ResetReadPointer();
-				rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE, 0, packet->systemAddress, true);
-			}
-			break;
+		{
+			bs.ResetReadPointer();
+			rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE, 0, packet->systemAddress, true);
+		}
+		break;
+		case ID_MESSAGE:
+		{
+			bs.ResetReadPointer();
+			rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE, 0, packet->systemAddress, true);
+		}
+		break;
 
 		default:
 			std::cout << "Unhandled Message Identifier: " << (int)msgid << std::endl;
@@ -107,6 +117,7 @@ void ServerApp::Loop()
 void ServerApp::SendWelcomePackage(SystemAddress& addr)
 {
 	++newID;
+	NumofPlayers++;
 	unsigned int shipcount = static_cast<unsigned int>(clients_.size());
 	unsigned char msgid = ID_WELCOME;
 	
@@ -133,10 +144,12 @@ void ServerApp::SendWelcomePackage(SystemAddress& addr)
 	clients_.insert(std::make_pair(addr, newobject));
 
 	std::cout << "New guy, assigned id " << newID << std::endl;
+	std::cout << "PLAYERS: " << NumofPlayers << std::endl;
 }
 
 void ServerApp::SendDisconnectionNotification(SystemAddress& addr)
 {
+
 	ClientMap::iterator itr = clients_.find(addr);
 	if (itr == clients_.end())
 		return;
@@ -149,8 +162,9 @@ void ServerApp::SendDisconnectionNotification(SystemAddress& addr)
 	rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, addr, true);
 
 	std::cout << itr->second.id << " has left the game" << std::endl;
-
+	NumofPlayers--;
 	clients_.erase(itr);
+	std::cout << "PLAYERS: " << NumofPlayers << std::endl;
 
 }
 
@@ -187,4 +201,21 @@ void ServerApp::UpdatePosition( SystemAddress& addr, float x_, float y_ )
 
 	itr->second.x_ = x_;
 	itr->second.y_ = y_;
+}
+
+void ServerApp::SendRejectPackage(SystemAddress& addr)
+{
+	//unsigned int shipcount = static_cast<unsigned int>(clients_.size());
+	unsigned char msgid = ID_REJECT;
+
+	RakNet::BitStream bs;
+	bs.Write(msgid);
+
+	rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, addr, false);
+
+	bs.Reset();
+
+	std::cout << "Connection Rejected" << newID << std::endl;
+
+	std::cout << "PLAYERS: " << NumofPlayers << std::endl;
 }

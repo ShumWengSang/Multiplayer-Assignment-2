@@ -94,12 +94,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
+    <ClCompile Include="ChatBackground.cpp" />
+    <ClCompile Include="ChatSystem.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="missile.cpp" />
     <ClCompile Include="ship.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
+    <ClInclude Include="ChatBackground.h" />
+    <ClInclude Include="ChatSystem.h" />
     <ClInclude Include="Globals.h" />
     <ClInclude Include="missile.h" />
     <ClInclude Include="MyMsgIDs.h" />

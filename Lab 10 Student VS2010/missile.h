@@ -33,7 +33,7 @@ public:
 	bool Update(std::vector<Ship*> &shiplist, float timedelta);
 	void Render();
 	bool HasCollided( Ship &ship );
-
+	bool RecordedTime;
 	void UpdateLoc( float x, float y, float w )
 	{
 		x_ = x;

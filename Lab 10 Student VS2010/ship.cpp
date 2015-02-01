@@ -36,7 +36,6 @@ Ship::Ship(int type, float locx_, float locy_)
 ,	ratio_(1)
 #endif
 {
-
 	std::cout << "Creating Ship " << type << " " << locx_ << " " << locy_ << std::endl;
 #ifdef INTERPOLATEMOVEMENT
 	x_ = server_x_ = client_x_ = locx_;
@@ -84,6 +83,7 @@ Ship::Ship(int type, float locx_, float locy_)
 */
 Ship::~Ship()
 {
+
 	HGE* hge = hgeCreate(HGE_VERSION);
 	hge->Texture_Free(tex_);
 	hge->Release();

@@ -29,6 +29,7 @@ Missile::Missile(char* filename, float x, float y, float w, int shipid ) :
 	y_ += velocity_y_ * 0.5;
 
 	Explode = false;
+	RecordedTime = false;
 
 }
 

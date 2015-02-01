@@ -40,7 +40,9 @@ Application::Application()
 ,	keydown_enter( false )
 
 {
-	RecordedTime = false;
+	ExitGameMessage = false;
+	RecordedTimeN = false;
+	keydown_space = false;
 }
 
 /**
@@ -51,6 +53,7 @@ Application::Application()
 
 Application::~Application() throw()
 {
+	ExitMessage.release();
 	Shutdown();
 	rakpeer_->Shutdown(100);
 	RakPeerInterface::DestroyInstance(rakpeer_);
@@ -78,18 +81,30 @@ bool Application::Init()
 	hge_->System_SetState(HGE_TITLE, "Movement");
 	hge_->System_SetState(HGE_LOGFILE, "movement.log");
 	hge_->System_SetState(HGE_DONTSUSPEND, true);
+	
+
+		Text.push_back("You have lost of server max players reached.");
 
 	if(hge_->System_Initiate()) 
 	{
-		ships_.push_back(new Ship(rand()%4+1, (float)400, (float)550));
+		ships_.push_back(new Ship(rand() % 4 + 1, (float)400, (float)550));
 		ships_.at(0)->SetName("My Ship");
-		if (RAKNET_STARTED == rakpeer_->Startup(1,&SocketDescriptor(), 1))
+
+		ExitMessage.reset(new hgeFont("font1.fnt"));
+		ExitMessage->SetScale(0.5);
+
+		theChat = new ChatSystem();
+
+		if (RAKNET_STARTED == rakpeer_->Startup(1, &SocketDescriptor(), 1))
 		{
 			rakpeer_->SetOccasionalPing(true);
 			if (RAKNET_STARTED == rakpeer_->Connect(serverip.c_str(), 1691, 0, 0))
 				return true;
 		}
 	}
+
+
+
 	return false;
 }
 
@@ -107,81 +122,104 @@ bool Application::Init()
 */
 bool Application::Update()
 {
-	float timedelta = hge_->Timer_GetDelta();
-	if(Keyboard(timedelta))
-		return true;
-
-	if(ships_.front()->ShipHP <= 0)
+	if (ExitGameMessage)
 	{
-		return true;
-	}
+		static int Time = hge_->Timer_GetTime();
 
-	for (ShipList::iterator ship = ships_.begin();
-		ship != ships_.end(); ship++)
-	{
-		(*ship)->Update(timedelta);
-
-		//collisions
-		if( (*ship) == ships_.at(0) )
-			checkCollisions( (*ship) );
-	}
-
-	// Lab 10 Task 5 : Updating the missile
-	if( mymissile )
-	{
-		if( mymissile->Update( ships_, timedelta ) )
+		if (hge_->Timer_GetTime() - Time > 10)
 		{
-			// have collision
-			if(!RecordedTime)
+			return true;
+		}
+	}
+	else
+	{
+		float timedelta = hge_->Timer_GetDelta();
+		if (Keyboard(timedelta))
+			return true;
+
+		if (ships_.front()->ShipHP <= 0)
+		{
+			ExitGameMessage = true;
+			return false;
+		}
+
+		for (ShipList::iterator ship = ships_.begin();
+			ship != ships_.end(); ship++)
+		{
+			(*ship)->Update(timedelta);
+
+			//collisions
+			if ((*ship) == ships_.at(0))
+				checkCollisions((*ship));
+		}
+
+		// Lab 10 Task 5 : Updating the missile
+		if (mymissile)
+		{
+			if (mymissile->Update(ships_, timedelta))
 			{
-				Time = hge_->Timer_GetTime();
-				RecordedTime = true;
+				// have collision
+				if (!mymissile->RecordedTime)
+				{
+					Time = hge_->Timer_GetTime();
+					mymissile->RecordedTime = true;
+				}
 			}
-			if(mymissile->Explode)
+			if (mymissile->Explode)
 			{
 
-				if((hge_->Timer_GetTime() - Time) > 3)
+				if ((hge_->Timer_GetTime() - Time) > 3)
 				{
 					mymissile->Explode = false;
 					delete mymissile;
 					mymissile = NULL;
-					RecordedTime = false;
 				}
 			}
 		}
-	}
 
 
-	// Lab 10 Task 13 : Update network missiles
-	for (MissileList::iterator missile = missiles_.begin();
-		missile != missiles_.end(); missile++)
-	{
-	 	if( (*missile)->Update(ships_, timedelta) )
+		// Lab 10 Task 13 : Update network missiles
+		for (MissileList::iterator missile = missiles_.begin();
+			missile != missiles_.end(); missile++)
 		{
-			// have collision
-			if(!RecordedTime)
+			if ((*missile)->Update(ships_, timedelta))
 			{
-				Time = hge_->Timer_GetTime();
-				RecordedTime = true;
-			}
-			if(mymissile->Explode)
-			{
-
-				if((hge_->Timer_GetTime() - Time) > 3)
+				// have collision
+				if (!(*missile)->RecordedTime)
 				{
-					mymissile->Explode = false;
-					delete mymissile;
-					mymissile = NULL;
-					RecordedTime = false;
+					Time = hge_->Timer_GetTime();
+					(*missile)->RecordedTime = true;
+				}
+			}
+			if ((*missile)->Explode)
+			{
+				if ((hge_->Timer_GetTime() - Time) > 3)
+				{
+					(*missile)->Explode = false;
+					delete (*missile);
+					(*missile) = NULL;
 				}
 			}
 		}
+
+		for (MissileList::iterator missile = missiles_.begin();
+			missile != missiles_.end();)
+		{
+			if ((*missile) == NULL)
+			{
+				missile = missiles_.erase(missile);
+			}
+			else
+			{
+				missile++;
+			}
+		}
+
+		if (Receive())
+			return true;
+
+		Send();
 	}
-
-	if(Receive())
-		return true;
-	Send();
-
 	return false;
 }
 
@@ -193,28 +231,42 @@ bool Application::Update()
 */
 void Application::Render()
 {
+
 	hge_->Gfx_BeginScene();
 	hge_->Gfx_Clear(0);
 
-	ShipList::iterator itr;
-	for (itr = ships_.begin(); itr != ships_.end(); itr++)
+	if (ExitGameMessage)
 	{
-		(*itr)->Render();
+		float x = hge_->System_GetState(HGE_SCREENWIDTH);
+		float y = hge_->System_GetState(HGE_SCREENHEIGHT);
+		ExitMessage->Render(x/2, y/2, HGETEXT_CENTER,
+			Text[0].c_str());
+		//Text[0].c_str()
 	}
-
-	// Lab 10 Task 6 : Render the missile
-	if( mymissile )
+	else
 	{
-		mymissile->Render();
-	}
 
-	// Lab 10 Task 12 : Render network missiles
-	MissileList::iterator itr2;
-	for (itr2 = missiles_.begin(); itr2 != missiles_.end(); itr2++)
-	{
-		(*itr2)->Render();
-	}
+		ShipList::iterator itr;
+		for (itr = ships_.begin(); itr != ships_.end(); itr++)
+		{
+			(*itr)->Render();
+		}
 
+		// Lab 10 Task 6 : Render the missile
+		if (mymissile)
+		{
+			mymissile->Render();
+		}
+
+		// Lab 10 Task 12 : Render network missiles
+		MissileList::iterator itr2;
+		for (itr2 = missiles_.begin(); itr2 != missiles_.end(); itr2++)
+		{
+			(*itr2)->Render();
+		}
+
+		theChat->Render();
+	}
 	hge_->Gfx_EndScene();
 }
 
@@ -668,18 +720,30 @@ bool Application::Receive()
 					bs.Read( w );
 					(*itr)->UpdateLoc( x, y, w );
 					bs.Read( x );
-					(*itr)->SetVelocityX( x );
-					bs.Read( y );
-					(*itr)->SetVelocityY( y );
+					(*itr)->SetVelocityX(x);
+					bs.Read(y);
+					(*itr)->SetVelocityY(y);
 				}
 				break;
 			}
-		}	
+		}
+	}
+
+	case ID_REJECT:
+	{
+		ExitGameMessage = true;
+	}
+	break;
+	case ID_MESSAGE:
+	{
+		char Message[50];
+		bs.Read(Message);
+		theChat->ReceiveString(Message);
 	}
 	break;
 
-		default:
-			std::cout << "Unhandled Message Identifier: " << (int)msgid << std::endl;
+	default:
+		std::cout << "Unhandled Message Identifier: " << (int)msgid << std::endl;
 
 		}
 		rakpeer_->DeallocatePacket(packet);
@@ -737,51 +801,90 @@ void Application::Send()
 
 			rakpeer_->Send(&bs3, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 		}
+
+		std::string Message = theChat->StringtoSend();
+		if (Message.size() > 0)
+		{
+			RakNet::BitStream bs4;
+			unsigned char msgid3 = ID_MESSAGE;
+			char ID [100];
+			itoa(ships_[0]->GetID(), ID, 10);
+			std::string theID(ID);
+			Message = "Ship " + theID + " : " + Message;
+			bs4.Write(msgid3);
+			bs4.Write(Message.c_str());
+			rakpeer_->Send(&bs4, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+		}
 	}
 }
 
 bool Application::Keyboard(float timedelta)
 {
+
 	if (hge_->Input_GetKeyState(HGEK_ESCAPE))
 		return true;
 
-	ships_.at(0)->SetAngularVelocity( 0.0f );
-
-	if (hge_->Input_GetKeyState(HGEK_LEFT))
+	if (!theChat->ChatTime)
 	{
-		ships_.at(0)->Accelerate(DEFAULT_ACCELERATION,timedelta);
-	}
+		ships_.at(0)->SetAngularVelocity(0.0f);
 
-	if (hge_->Input_GetKeyState(HGEK_RIGHT))
-	{
-		ships_.at(0)->Accelerate(-DEFAULT_ACCELERATION,timedelta);
-	}
-
-	if (hge_->Input_GetKeyState(HGEK_UP))
-	{
-		//ships_.at(0)->Accelerate(DEFAULT_ACCELERATION, timedelta);
-	}
-
-	if (hge_->Input_GetKeyState(HGEK_DOWN))
-	{
-		//ships_.at(0)->Accelerate(-DEFAULT_ACCELERATION, timedelta);
-	}
-
-	// Lab 10 Task 4 : Add a key to shoot missiles
-	if (hge_->Input_GetKeyState(HGEK_ENTER))
-	{
-		if( !keydown_enter )
+		if (hge_->Input_GetKeyState(HGEK_LEFT))
 		{
-			CreateMissile(ships_.at(0)->GetX(), ships_.at(0)->GetY(), ships_.at(0)->GetW(), ships_.at(0)->GetID());  
-			keydown_enter = true;
+			ships_.at(0)->Accelerate(DEFAULT_ACCELERATION, timedelta);
+		}
+
+		if (hge_->Input_GetKeyState(HGEK_RIGHT))
+		{
+			ships_.at(0)->Accelerate(-DEFAULT_ACCELERATION, timedelta);
+		}
+
+		if (hge_->Input_GetKeyState(HGEK_UP))
+		{
+			//ships_.at(0)->Accelerate(DEFAULT_ACCELERATION, timedelta);
+		}
+
+		if (hge_->Input_GetKeyState(HGEK_DOWN))
+		{
+			//ships_.at(0)->Accelerate(-DEFAULT_ACCELERATION, timedelta);
+		}
+
+		// Lab 10 Task 4 : Add a key to shoot missiles
+		if (hge_->Input_GetKeyState(HGEK_SPACE))
+		{
+			if (!keydown_space)
+			{
+				CreateMissile(ships_.at(0)->GetX(), ships_.at(0)->GetY(), ships_.at(0)->GetW(), ships_.at(0)->GetID());
+				keydown_space = true;
+			}
+		}
+		else
+		{
+			if (keydown_space)
+			{
+				keydown_space = false;
+			}
+		}
+
+		if (hge_->Input_GetKeyState(HGEK_ENTER))
+		{
+			if (!keydown_enter)
+			{
+				std::cout << "ITS CHAT TIME FOOLS " << std::endl;
+				theChat->ChatTime = true;
+				keydown_enter = true;
+			}
+		}
+		else
+		{
+			if (keydown_enter)
+			{
+				keydown_enter = false;
+			}
 		}
 	}
 	else
 	{
-		if( keydown_enter )
-		{
-			keydown_enter = false;
-		}
+		theChat->KeyboardInput(keydown_enter);
 	}
 	return false;
 }

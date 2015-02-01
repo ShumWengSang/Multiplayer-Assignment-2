@@ -1,12 +1,18 @@
 #ifndef _APPLICATION_H_
 #define _APPLICATION_H_
 
+#include <hge.h>
+#include <hgerect.h>
+#include <hgeFont.h>
 #include "ship.h"
 #include "missile.h"
 #include <vector>
 #include "RakPeerInterface.h"
+#include "ChatSystem.h"
 
 class HGE;
+class hgeFont;
+
 using namespace RakNet;
 
 //! The default angular velocity of the ship when it is in motion
@@ -33,6 +39,7 @@ class Application
 	Missile* mymissile;
 	bool have_missile;
 	bool keydown_enter;
+	bool keydown_space;
 
 	// Lab 10 Task 8 : add variables to handle networked missiles
 	typedef std::vector<Missile*> MissileList;
@@ -54,6 +61,8 @@ class Application
 	void Send();
 	bool Keyboard(float timedelta);
 
+	bool RecordedTimeN;
+
 public:
 	Application();
 	~Application() throw();
@@ -63,7 +72,11 @@ public:
 	void Render();
 
 	unsigned int Time;
-	bool RecordedTime;
+	bool ExitGameMessage;
+	std::auto_ptr<hgeFont> ExitMessage;
+	std::vector<std::string> Text;
+
+	ChatSystem * theChat;
 };
 
 #endif

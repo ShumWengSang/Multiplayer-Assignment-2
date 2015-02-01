@@ -13,6 +13,8 @@
     <ClCompile Include="ship.cpp">
       <Filter>CPP</Filter>
     </ClCompile>
+    <ClCompile Include="ChatBackground.cpp" />
+    <ClCompile Include="ChatSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h">
@@ -30,6 +32,8 @@
     <ClInclude Include="MyMsgIDs.h">
       <Filter>Header</Filter>
     </ClInclude>
+    <ClInclude Include="ChatBackground.h" />
+    <ClInclude Include="ChatSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header">

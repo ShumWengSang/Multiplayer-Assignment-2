@@ -83,7 +83,7 @@ bool Application::Init()
 	hge_->System_SetState(HGE_DONTSUSPEND, true);
 	
 
-		Text.push_back("You have lost of server max players reached.");
+		Text.push_back("You have lost or server max players reached.");
 
 	if(hge_->System_Initiate()) 
 	{
@@ -495,7 +495,7 @@ void Application::CreateMissile(float x, float y, float w, int id)
 
 bool Application::Receive()
 {
-		if (Packet* packet = rakpeer_->Receive())
+	if (Packet* packet = rakpeer_->Receive())
 	{
 		RakNet::BitStream bs(packet->data, packet->length, false);
 		

@@ -104,6 +104,7 @@
     <ClInclude Include="Application.h" />
     <ClInclude Include="ChatBackground.h" />
     <ClInclude Include="ChatSystem.h" />
+    <ClInclude Include="CustomPacket.h" />
     <ClInclude Include="Globals.h" />
     <ClInclude Include="missile.h" />
     <ClInclude Include="MyMsgIDs.h" />

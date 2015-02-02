@@ -51,7 +51,8 @@ bool ChatSystem::KeyboardInput(bool &keydownenter)
 			ToSendBuffer.clear();
 			std::cout << "CHAT MODE OFF" << std::endl;
 			FirstRun = true;
-			return false;
+			keydownenter = true;
+			//return false;
 			//SEND THE STRING
 		}
 	}

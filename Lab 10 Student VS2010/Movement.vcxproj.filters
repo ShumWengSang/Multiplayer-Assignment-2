@@ -34,6 +34,9 @@
     </ClInclude>
     <ClInclude Include="ChatBackground.h" />
     <ClInclude Include="ChatSystem.h" />
+    <ClInclude Include="CustomPacket.h">
+      <Filter>CPP</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header">

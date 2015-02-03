@@ -1,35 +1,47 @@
 #include <iostream>
 #include <vector>
-enum PacketType
-{
-	MISSLE,
-	SHIP,
-	CHATMESSAGE
-};
-
+#include <string>
+#include <WinSock2.h>
+/////////////////////////////////
+///////////FORMAT OF CUSTOM PACKET
+/////////////////////////////////
+//
+//-------------------------------------------------
+//NumOfContents||Delimitier||size||Delimitier||type||data||Delimitier||size||Delimitier||type||data...
+//-------------------------------------------------
+//
+///////////////////////////////////
 struct CustomPacket
 {
-	unsigned int packet_type;
 	std::vector<std::string> Message;
-	char theRealMessage[100];
+	char theRealMessage[200];
 	unsigned int NumOfContents;
+	std::string BufferMessage;
+	char * NextTarget;
 
 	CustomPacket()
 	{
 		NumOfContents = 0;
+		NextTarget = NULL;
+	}
+
+	std::string Convert(std::string value)
+	{
+		value = "S" + value;
+		return value;
 	}
 
 	std::string Convert(int value)
 	{
 		char buffer[100];
-		sprintf_s(buffer,100,"%i",value);
+		sprintf_s(buffer,100,"I%i",value);
 		return std::string(buffer);
 	}
 
 	std::string Convert(float value)
 	{
 		char buffer[100];
-		sprintf_s(buffer,100,"%f",value);
+		sprintf_s(buffer,100,"F%f",value);
 		return std::string(buffer);
 	}
 
@@ -41,16 +53,110 @@ struct CustomPacket
 
 	void Ready()
 	{
-		int howMany;
-		int Type;
+		unsigned int * howMany;
+		howMany = new unsigned int[Message.size()];
+		//0 for NULL, 1 for int, 2 for float, 3 for string
+		unsigned int * Type;
+		Type = new unsigned int[Message.size()];
+
+		char NumContents[4];
+		char CType[4];
+		char CSize[4];
+
+
+
+		for (int i = 0; i < Message.size(); i++)
+		{
+			howMany[i] = Message[i].size();
+		}
+
+		itoa(NumOfContents, NumContents, 10);
+		BufferMessage = NumContents;
+		for (int i = 0; i < Message.size(); i++)
+		{
+			itoa((howMany[i]), CSize, 10);
+			std::string SHowMany(CSize);
+
+			BufferMessage = BufferMessage /*+ "~" + CSize*/ + "~" + Message[i];
+		}
 	}
+
+	void DeReady()
+	{
+		char * Buffer = NULL;
+		if (theRealMessage != NULL)
+		{
+			Buffer = strtok_s(theRealMessage, "~", &NextTarget);
+		}
+	}
+
+
+	bool Get(int & value)
+	{
+		char * Buffer = NULL;
+		if (NextTarget != NULL)
+		{
+			Buffer = strtok_s(NextTarget, "~", &NextTarget);
+			if (Buffer[0] == 'I')
+			{
+				value = atoi(++Buffer);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+	}
+
+	bool Get(float & value)
+	{
+		char * Buffer = NULL;
+		if (NextTarget != NULL)
+		{
+			Buffer = strtok_s(NextTarget, "~", &NextTarget);
+			if (Buffer[0] == 'F')
+			{
+				value = atof(++Buffer);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+	}
+
+	bool Get(std::string & value)
+	{
+		char * Buffer = NULL;
+		if (NextTarget != NULL)
+		{
+			Buffer = strtok_s(NextTarget, "~", &NextTarget);
+			if (Buffer[0] == 'S')
+			{
+				std::string SBuffer(++Buffer);
+				value = SBuffer;
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+	}
+
+
 	void Serialization()
 	{
-		memcpy(data, theRealMessage, 104);
+		Ready();
+		memcpy(theRealMessage, BufferMessage.c_str(), /*sizeof(BufferMessage)*/200);
+		htonl(theRealMessage);	
 	}
-	void Deserialization()
+	void Deserialization(char * data)
 	{
-		memcpy(theRealMessage, data, 104);
+		memcpy(theRealMessage, data, 200);
+		DeReady();
 	}
 
 };
@@ -62,5 +168,27 @@ void main ()
 
 	std::string  yolo = thePacket.Convert(i);
 	std::string yolo2 = thePacket.Convert(20.f);
+	std::string yolo3 = thePacket.Convert(5.f);
+	std::string yolo4 = thePacket.Convert(std::string("hello"));
+	thePacket.Add(yolo);
+	thePacket.Add(yolo2);
+	thePacket.Add(yolo3);
+	thePacket.Add(yolo4);
+	thePacket.Serialization();
 
+	std::cout << thePacket.theRealMessage << std::endl;
+
+	CustomPacket theSecondPacket;
+	theSecondPacket.Deserialization(thePacket.theRealMessage);
+	std::cout << theSecondPacket.theRealMessage << theSecondPacket.NextTarget << std::endl;
+	int a;
+	float b, c;
+	std::string testing;
+	theSecondPacket.Get(a);
+	theSecondPacket.Get(b);
+	theSecondPacket.Get(c);
+	theSecondPacket.Get(testing);
+	std::cout << a <<" " << b << " "<< c << " " << testing << std::endl;
+
+	system("pause");
 }

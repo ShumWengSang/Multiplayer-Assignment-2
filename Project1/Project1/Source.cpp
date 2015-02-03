@@ -146,18 +146,34 @@ struct CustomPacket
 		}
 	}
 
+	void EndianSwapHtoNL(char * data, int size)
+	{
+		for (int i = 0; i < size; i++)
+		{
+			htonl(data[i]);
+		}
+	}
 
+	void EndianSwapNtoHL(char * data, int size)
+	{
+		for (int i = 0; i < size; i++)
+		{
+			ntohl(data[i]);
+		}
+	}
 	void Serialization()
 	{
 		Ready();
 		memcpy(theRealMessage, BufferMessage.c_str(), /*sizeof(BufferMessage)*/200);
-		htonl(theRealMessage);	
+		EndianSwapHtoNL(theRealMessage, 200);
 	}
 	void Deserialization(char * data)
 	{
 		memcpy(theRealMessage, data, 200);
 		DeReady();
+		EndianSwapNtoHL(theRealMessage, 200);
 	}
+
 
 };
 

@@ -1,6 +1,7 @@
-
+#include "../Lab 10 Student VS2010/MyMsgIDs.h"
 struct SecondCustomPacket
 {
+	MyMsgIDs theID;
 	virtual void Serialize(char * data) = 0;
 	virtual void Deserialize(char * data) = 0;
 
@@ -27,8 +28,6 @@ struct SecondCustomPacket
 
 struct MissilePacket : public SecondCustomPacket
 {
-
-
 	int OwnerID;
 	char deleted;
 	float X;
@@ -100,4 +99,18 @@ struct ShipPacket : public SecondCustomPacket
 		EndianSwapToHost(ServerVelY);
 		EndianSwapToHost(AngularVelocity);
 	}
+};
+
+struct MessagePacket : public SecondCustomPacket
+{
+	void Serialize(char * data)
+	{
+		memcpy(data, this, sizeof(MessagePacket));
+	}
+	void Deserialize(char * data)
+	{
+		memcpy(this, data, sizeof(MessagePacket));
+	}
+
+	char Message[100];
 };

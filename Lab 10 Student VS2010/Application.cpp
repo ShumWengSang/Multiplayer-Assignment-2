@@ -444,22 +444,22 @@ void Application::CreateMissile(float x, float y, float w, int id)
 {
 #ifdef NETWORKMISSLE
 	// Lab 10 Task 9b : Implement networked version of createmissile
-	RakNet::BitStream bs;
-	unsigned char msgid;
-	unsigned char deleted=0;
 
 	if( mymissile )
 	{
+		MissilePacket theMissile;
+		theMissile.deleted = 1;
+		theMissile.theID = ID_UPDATEMISSILE;
+		theMissile.OwnerID = id;
+		theMissile.X = x;
+		theMissile.Y = y;
+		theMissile.W = w;
+
+		char data[sizeof(MissilePacket)];
+		theMissile.Serialize(data);
 		// send update throughnetwork to delete this missile
-		deleted=1;
-		msgid = ID_UPDATEMISSILE;
-		bs.Write(msgid);
-		bs.Write(id);
-		bs.Write(deleted);
-		bs.Write(x);
-		bs.Write(y);
-		bs.Write(w);
-		rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+		
+		rakpeer_->Send(data, strlen(data) + 1, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 
 		// delete existing missile
 		delete mymissile;
@@ -469,14 +469,18 @@ void Application::CreateMissile(float x, float y, float w, int id)
 	// add a new missile based on the following parameter coordinates
 	mymissile = new Missile("missile.png", x, y, w, id );
 // send network command to add new missile
-	bs.Reset();
-	msgid = ID_NEWMISSILE;
-	bs.Write(msgid);
-	bs.Write(id);
-	bs.Write(x);
-	bs.Write(y);
-	bs.Write(w);
-	rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+
+	MissilePacket theMissile;
+
+	theMissile.theID = ID_NEWMISSILE;
+	theMissile.OwnerID = id;
+	theMissile.X = x;
+	theMissile.Y = y;
+	theMissile.W = w;
+	char data[sizeof(MissilePacket)];
+	theMissile.Serialize(data);
+
+	rakpeer_->Send(data, strlen(data) + 1, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 
 #else
 // Lab 10 Task 3 : Implement local version missile creation
@@ -756,13 +760,12 @@ void Application::Send()
 	if (RakNet::GetTime() - timer_ > 100)
 	{
 		timer_ = (unsigned int)RakNet::GetTime();
-		RakNet::BitStream bs2;
 		unsigned char msgid = ID_MOVEMENT;
-		bs2.Write(msgid);
-
+		
 #ifdef INTERPOLATEMOVEMENT
 
 		ShipPacket theShip;
+		theShip.theID = ID_MOVEMENT;
 		theShip.ShipID = ships_.at(0)->GetID();
 		theShip.ServerX = ships_.at(0)->GetServerX();
 		theShip.ServerY = ships_.at(0)->GetServerY();
@@ -774,7 +777,6 @@ void Application::Send()
 		char data[sizeof(ShipPacket)];
 		theShip.Serialize(data);
 
-		bs2.Write(data);
 
 		//bs2.Write(ships_.at(0)->GetID());
 		//bs2.Write(ships_.at(0)->GetServerX());
@@ -795,39 +797,55 @@ void Application::Send()
 		bs2.Write(ships_.at(0)->GetAngularVelocity());
 #endif
 
-		rakpeer_->Send(&bs2, HIGH_PRIORITY, RELIABLE, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+		rakpeer_->Send((char *)data, strlen(data) + 1, HIGH_PRIORITY, RELIABLE, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 
 
 		// Lab 10 Task 11 : send missile update 
 		if( mymissile )
 		{
-			RakNet::BitStream bs3;
-			unsigned char msgid2 = ID_UPDATEMISSILE;
+			MissilePacket theMissile;
+			theMissile.theID = ID_UPDATEMISSILE;
 			char deleted = 0;
-			bs3.Write(msgid2);
-			bs3.Write(mymissile->GetOwnerID());
+
+			theMissile.OwnerID = mymissile->GetOwnerID();
+			theMissile.deleted = deleted;
+			theMissile.X = mymissile->GetX();
+			theMissile.Y = mymissile->GetY();
+			theMissile.W = mymissile->GetW();
+			theMissile.VelX = mymissile->GetVelocityX();
+			theMissile.VelY = mymissile->GetVelocityY();
+			
+			char Message[sizeof(MissilePacket)];
+			theMissile.Serialize(Message);
+			/*	bs3.Write(mymissile->GetOwnerID());
 			bs3.Write(deleted);
 			bs3.Write(mymissile->GetX());
 			bs3.Write(mymissile->GetY());
 			bs3.Write(mymissile->GetW());
 			bs3.Write(mymissile->GetVelocityX());
-			bs3.Write(mymissile->GetVelocityY());
+			bs3.Write(mymissile->GetVelocityY());*/
 
-			rakpeer_->Send(&bs3, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+			rakpeer_->Send(Message, strlen(Message) + 1, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 		}
 
 		std::string Message = theChat->StringtoSend();
 		if (Message.size() > 0)
 		{
-			RakNet::BitStream bs4;
-			unsigned char msgid3 = ID_MESSAGE;
 			char ID [100];
 			itoa(ships_[0]->GetID(), ID, 10);
 			std::string theID(ID);
 			Message = "Ship " + theID + " : " + Message;
-			bs4.Write(msgid3);
-			bs4.Write(Message.c_str());
-			rakpeer_->Send(&bs4, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+
+			MessagePacket thePacket;
+			thePacket.theID = ID_MESSAGE;
+
+			char data[sizeof(MessagePacket)];
+
+			strncpy(thePacket.Message, (char *)Message.c_str(), sizeof(thePacket.Message));
+			thePacket.Message[sizeof(thePacket.Message) - 1] = '\0';
+			thePacket.Serialize(data);
+
+			rakpeer_->Send(data, strlen(data) + 1, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 		}
 	}
 }

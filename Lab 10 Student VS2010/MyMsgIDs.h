@@ -15,7 +15,6 @@ enum MyMsgIDs
 	ID_UPDATEMISSILE,
 	ID_REJECT,
 	ID_MESSAGE
-
 };
 
 #endif

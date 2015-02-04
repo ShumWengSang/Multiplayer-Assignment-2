@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <WinSock2.h>
+
 /////////////////////////////////
 ///////////FORMAT OF CUSTOM PACKET
 /////////////////////////////////
@@ -11,6 +12,13 @@
 //-------------------------------------------------
 //
 ///////////////////////////////////
+
+int swap_uint32(int val)
+{
+	val = ((val << 8) & 0xFF00FF00) | ((val >> 8) & 0xFF00FF);
+	return (val << 16) | (val >> 16);
+}
+
 struct CustomPacket
 {
 	std::vector<std::string> Message;
@@ -205,6 +213,6 @@ void main ()
 	theSecondPacket.Get(c);
 	theSecondPacket.Get(testing);
 	std::cout << a <<" " << b << " "<< c << " " << testing << std::endl;
-
+	int q = sizeof(char);
 	system("pause");
 }

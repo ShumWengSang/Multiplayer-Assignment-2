@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <WinSock2.h>
+#include "CRC4.h"
 /////////////////////////////////
 ///////////FORMAT OF CUSTOM PACKET
 /////////////////////////////////
@@ -150,7 +151,7 @@ struct CustomPacket
 	{
 		for (int i = 0; i < size; i++)
 		{
-			htonl(data[i]);
+			//data[i] = htonl(data[i]);
 		}
 	}
 
@@ -158,7 +159,7 @@ struct CustomPacket
 	{
 		for (int i = 0; i < size; i++)
 		{
-			ntohl(data[i]);
+			//data [i] = ntohl(data[i]);
 		}
 	}
 	void Serialization()
@@ -170,8 +171,12 @@ struct CustomPacket
 	void Deserialization(char * data)
 	{
 		memcpy(theRealMessage, data, 200);
+	}
+
+	void UnPack()
+	{
 		DeReady();
-		EndianSwapNtoHL(theRealMessage, 200);
+		EndianSwapHtoNL(theRealMessage, 200);
 	}
 
 
@@ -181,6 +186,8 @@ void main ()
 {
 	CustomPacket thePacket;
 	int i = 10;
+
+	CRC4 RC4;
 
 	std::string  yolo = thePacket.Convert(i);
 	std::string yolo2 = thePacket.Convert(20.f);
@@ -194,8 +201,17 @@ void main ()
 
 	std::cout << thePacket.theRealMessage << std::endl;
 
+	RC4.Encrypt(thePacket.theRealMessage, "key");
+
+	std::cout << thePacket.theRealMessage << std::endl;
+
 	CustomPacket theSecondPacket;
 	theSecondPacket.Deserialization(thePacket.theRealMessage);
+	//std::cout << theSecondPacket.theRealMessage << theSecondPacket.NextTarget << std::endl;
+
+	RC4.Decrypt(theSecondPacket.theRealMessage, "key");
+
+	theSecondPacket.UnPack();
 	std::cout << theSecondPacket.theRealMessage << theSecondPacket.NextTarget << std::endl;
 	int a;
 	float b, c;

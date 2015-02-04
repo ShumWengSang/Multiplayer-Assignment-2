@@ -607,28 +607,27 @@ bool Application::Receive()
 
 		case ID_MOVEMENT:
 			{
-				unsigned int shipid;
-				float temp;
-				float x,y,w;
-				bs.Read(shipid);
+				ShipPacket theShip;
+				char data[sizeof(ShipPacket)];
+				bs.Read(data);
+				theShip.Deserialize(data);
+
+				float x = theShip.ServerX;  float y = theShip.ServerY; float w = theShip.ServerW;
+				unsigned int shipid = theShip.ShipID;
+				float VelX = theShip.ServerVelX; float VelY = theShip.ServerVelY; float AngVel = theShip.AngularVelocity;
+
 				for (ShipList::iterator itr = ships_.begin(); itr != ships_.end(); ++itr)
 				{
 					if ((*itr)->GetID() == shipid)
 					{
 						// this portion needs to be changed for it to work
 #ifdef INTERPOLATEMOVEMENT
-						bs.Read(x);
-						bs.Read(y);
-						bs.Read(w);
 
 						(*itr)->SetServerLocation( x, y, w ); 
 
-						bs.Read(temp);
-						(*itr)->SetServerVelocityX( temp );
-						bs.Read(temp);
-						(*itr)->SetServerVelocityY( temp );
-						bs.Read(temp);
-						(*itr)->SetAngularVelocity( temp );
+						(*itr)->SetServerVelocityX(VelX);
+						(*itr)->SetServerVelocityY(VelY);
+						(*itr)->SetAngularVelocity(AngVel);
 
 						(*itr)->DoInterpolateUpdate();
 #else
@@ -699,7 +698,7 @@ bool Application::Receive()
 	{
 		float x,y,w;
 		int id;
-		bool deleted;
+		char deleted;
 
 		bs.Read(id);
 		bs.Read(deleted);
@@ -762,13 +761,28 @@ void Application::Send()
 		bs2.Write(msgid);
 
 #ifdef INTERPOLATEMOVEMENT
-		bs2.Write(ships_.at(0)->GetID());
-		bs2.Write(ships_.at(0)->GetServerX());
-		bs2.Write(ships_.at(0)->GetServerY());
-		bs2.Write(ships_.at(0)->GetServerW());
-		bs2.Write(ships_.at(0)->GetServerVelocityX());
-		bs2.Write(ships_.at(0)->GetServerVelocityY());
-		bs2.Write(ships_.at(0)->GetAngularVelocity());
+
+		ShipPacket theShip;
+		theShip.ShipID = ships_.at(0)->GetID();
+		theShip.ServerX = ships_.at(0)->GetServerX();
+		theShip.ServerY = ships_.at(0)->GetServerY();
+		theShip.ServerW = ships_.at(0)->GetServerW();
+		theShip.ServerVelX = ships_.at(0)->GetServerVelocityX();
+		theShip.ServerVelY = ships_.at(0)->GetServerVelocityY();
+		theShip.AngularVelocity = ships_.at(0)->GetAngularVelocity();
+
+		char data[sizeof(ShipPacket)];
+		theShip.Serialize(data);
+
+		bs2.Write(data);
+
+		//bs2.Write(ships_.at(0)->GetID());
+		//bs2.Write(ships_.at(0)->GetServerX());
+		//bs2.Write(ships_.at(0)->GetServerY());
+		//bs2.Write(ships_.at(0)->GetServerW());
+		//bs2.Write(ships_.at(0)->GetServerVelocityX());
+		//bs2.Write(ships_.at(0)->GetServerVelocityY());
+		//bs2.Write(ships_.at(0)->GetAngularVelocity());
 
 #else
 		bs2.Write(ships_.at(0)->GetID());
@@ -789,7 +803,7 @@ void Application::Send()
 		{
 			RakNet::BitStream bs3;
 			unsigned char msgid2 = ID_UPDATEMISSILE;
-			bool deleted = 0;
+			char deleted = 0;
 			bs3.Write(msgid2);
 			bs3.Write(mymissile->GetOwnerID());
 			bs3.Write(deleted);

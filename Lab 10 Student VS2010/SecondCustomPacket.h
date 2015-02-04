@@ -1,45 +1,8 @@
-enum MessageType
-{
-	MISSILE,
-	SHIP,
-	MESSAGE
-};
 
 struct SecondCustomPacket
 {
-	MessageType theType;
-	char Bits[500];
-	virtual void Serialize() = 0;
-	virtual void Deserialize() = 0;
-	virtual void EndianSwapToNetwork() = 0;
-	virtual void EndianSwaptoHost() = 0;
-};
-
-struct MissilePacket : public SecondCustomPacket
-{
-	MissilePacket()
-	{
-		theType = MISSILE;
-	}
-
-	int OwnerID;
-	char deleted;
-	float X;
-	float Y;
-	float W;
-	float VelX;
-	float VelY;
-
-	void Serialize()
-	{
-		EndianSwapToNetwork(OwnerID);
-		EndianSwapToNetwork(X);
-		EndianSwapToNetwork(Y);
-		EndianSwapToNetwork(W);
-		EndianSwapToNetwork(VelX);
-		EndianSwapToNetwork(VelY);
-
-	}
+	virtual void Serialize(char * data) = 0;
+	virtual void Deserialize(char * data) = 0;
 
 	void EndianSwapToNetwork(int &value)
 	{
@@ -50,28 +13,91 @@ struct MissilePacket : public SecondCustomPacket
 	{
 		value = htonl(value);
 	}
+
+	void EndianSwapToHost(int &value)
+	{
+		value = ntohl(value);
+	}
+
+	void EndianSwapToHost(float &value)
+	{
+		value = ntohl(value);
+	}
+};
+
+struct MissilePacket : public SecondCustomPacket
+{
+
+
+	int OwnerID;
+	char deleted;
+	float X;
+	float Y;
+	float W;
+	float VelX;
+	float VelY;
+
+	void Serialize(char * data)
+	{
+		EndianSwapToNetwork(OwnerID);
+		EndianSwapToNetwork(X);
+		EndianSwapToNetwork(Y);
+		EndianSwapToNetwork(W);
+		EndianSwapToNetwork(VelX);
+		EndianSwapToNetwork(VelY);
+
+		memcpy(data, this, sizeof(MissilePacket));
+	}
+
+	void Deserialize(char * data)
+	{
+		memcpy(this, data, sizeof(MissilePacket));
+
+		EndianSwapToHost(OwnerID);
+		EndianSwapToHost(X);
+		EndianSwapToHost(Y);
+		EndianSwapToHost(W);
+		EndianSwapToHost(VelX);
+		EndianSwapToHost(VelY);
+	}
+
+
 };
 
 struct ShipPacket : public SecondCustomPacket
 {
-	ShipPacket()
-	{
-		theType = SHIP;
-	}
-	unsigned int ShipID;
+	int ShipID;
 	float ServerX;
 	float ServerY;
 	float ServerW;
 
 	float ServerVelX;
 	float ServerVelY;
-};
+	float AngularVelocity;
 
-struct MessagePacket : public SecondCustomPacket
-{
-	MessagePacket()
+	void Serialize(char * data)
 	{
-		theType = MESSAGE;
+		EndianSwapToNetwork(ShipID);
+		EndianSwapToNetwork(ServerX);
+		EndianSwapToNetwork(ServerY);
+		EndianSwapToNetwork(ServerW);
+		EndianSwapToNetwork(ServerVelX);
+		EndianSwapToNetwork(ServerVelY);
+		EndianSwapToNetwork(AngularVelocity);
+
+		memcpy(data, this, sizeof(ShipPacket));
 	}
-	char Message[100];
+
+	void Deserialize(char * data)
+	{
+		memcpy(this, data, sizeof(ShipPacket));
+
+		EndianSwapToHost(ShipID);
+		EndianSwapToHost(ServerX);
+		EndianSwapToHost(ServerY);
+		EndianSwapToHost(ServerW);
+		EndianSwapToHost(ServerVelX);
+		EndianSwapToHost(ServerVelY);
+		EndianSwapToHost(AngularVelocity);
+	}
 };

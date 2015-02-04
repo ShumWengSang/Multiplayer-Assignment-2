@@ -4,6 +4,7 @@
 #include "GetTime.h"
 #include "../MyMsgIDs.h"
 #include <iostream>
+#include "../SecondCustomPacket.h"
 
 ServerApp::ServerApp() : 
 	rakpeer_(RakPeerInterface::GetInstance()),
@@ -67,11 +68,14 @@ void ServerApp::Loop()
 
 		case ID_MOVEMENT:
 			{
-				float x, y;
-				unsigned int shipid;
-				bs.Read(shipid);
-				bs.Read(x);
-				bs.Read(y);
+				ShipPacket theShip;
+				char data[sizeof(ShipPacket)];
+				bs.Read(data);
+				theShip.Deserialize(data);
+
+
+				float x = theShip.ServerX;  float y = theShip.ServerY;
+				unsigned int shipid = theShip.ShipID;
 				UpdatePosition( packet->systemAddress, x, y );
 
 				bs.ResetReadPointer();

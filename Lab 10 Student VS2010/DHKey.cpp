@@ -4,8 +4,10 @@
 DHKey::DHKey()
 {
 	srand(time(NULL));
+	////This prime is supposed to be randomly generated, and the Base also
 	Prime = 23;
 	Base = 4;
+	/////////////////////////////////////////////////////////////
 	ChooseSecretInt();
 }
 

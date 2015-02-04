@@ -2,14 +2,14 @@
 #include <vector>
 #include <string>
 #include <WinSock2.h>
-
+#include "DHKey.h"
 #include "CRC4.h"
 /////////////////////////////////
 ///////////FORMAT OF CUSTOM PACKET
 /////////////////////////////////
 //
 //-------------------------------------------------
-//NumOfContents||Delimitier||Delimitier||type||data||Delimitier||Delimitier||type||data...
+//NumOfContents||||||||data||||||||data...
 //-------------------------------------------------
 //
 ///////////////////////////////////
@@ -192,43 +192,55 @@ struct CustomPacket
 
 void main ()
 {
-	CustomPacket thePacket;
-	int i = 10;
+	//CustomPacket thePacket;
+	//int i = 10;
 
-	CRC4 RC4;
+	//CRC4 RC4;
 
-	std::string  yolo = thePacket.Convert(i);
-	std::string yolo2 = thePacket.Convert(20.f);
-	std::string yolo3 = thePacket.Convert(5.f);
-	std::string yolo4 = thePacket.Convert(std::string("hello"));
-	thePacket.Add(yolo);
-	thePacket.Add(yolo2);
-	thePacket.Add(yolo3);
-	thePacket.Add(yolo4);
-	thePacket.Serialization();
+	//std::string  yolo = thePacket.Convert(i);
+	//std::string yolo2 = thePacket.Convert(20.f);
+	//std::string yolo3 = thePacket.Convert(5.f);
+	//std::string yolo4 = thePacket.Convert(std::string("hello"));
+	//thePacket.Add(yolo);
+	//thePacket.Add(yolo2);
+	//thePacket.Add(yolo3);
+	//thePacket.Add(yolo4);
+	//thePacket.Serialization();
 
-	std::cout << thePacket.theRealMessage << std::endl;
+	//std::cout << thePacket.theRealMessage << std::endl;
 
-	RC4.Encrypt(thePacket.theRealMessage, "key");
+	//RC4.Encrypt(thePacket.theRealMessage, "key");
 
-	std::cout << thePacket.theRealMessage << std::endl;
+	//std::cout << thePacket.theRealMessage << std::endl;
 
-	CustomPacket theSecondPacket;
-	theSecondPacket.Deserialization(thePacket.theRealMessage);
+	//CustomPacket theSecondPacket;
+	//theSecondPacket.Deserialization(thePacket.theRealMessage);
+	////std::cout << theSecondPacket.theRealMessage << theSecondPacket.NextTarget << std::endl;
+
+	//RC4.Decrypt(theSecondPacket.theRealMessage, "key");
+
+	//theSecondPacket.UnPack();
 	//std::cout << theSecondPacket.theRealMessage << theSecondPacket.NextTarget << std::endl;
+	//int a;
+	//float b, c;
+	//std::string testing;
+	//theSecondPacket.Get(a);
+	//theSecondPacket.Get(b);
+	//theSecondPacket.Get(c);
+	//theSecondPacket.Get(testing);
+	//std::cout << a <<" " << b << " "<< c << " " << testing << std::endl;
+	//int q = sizeof(char);
 
-	RC4.Decrypt(theSecondPacket.theRealMessage, "key");
+	DHKey first;
+	DHKey second;
 
-	theSecondPacket.UnPack();
-	std::cout << theSecondPacket.theRealMessage << theSecondPacket.NextTarget << std::endl;
-	int a;
-	float b, c;
-	std::string testing;
-	theSecondPacket.Get(a);
-	theSecondPacket.Get(b);
-	theSecondPacket.Get(c);
-	theSecondPacket.Get(testing);
-	std::cout << a <<" " << b << " "<< c << " " << testing << std::endl;
-	int q = sizeof(char);
+	int i = first.GetFirstExchange();
+	int k = second.GetFirstExchange();
+
+	first.ComputeKey(k);
+	second.ComputeKey(i);
+
+	std::cout << "First: " << first.GetKey() << " : " << "Second: " << second.GetKey();
+
 	system("pause");
 }

@@ -699,7 +699,7 @@ bool Application::Receive()
 	{
 		float x,y,w;
 		int id;
-		char deleted;
+		bool deleted;
 
 		bs.Read(id);
 		bs.Read(deleted);
@@ -789,7 +789,7 @@ void Application::Send()
 		{
 			RakNet::BitStream bs3;
 			unsigned char msgid2 = ID_UPDATEMISSILE;
-			unsigned char deleted = 0;
+			bool deleted = 0;
 			bs3.Write(msgid2);
 			bs3.Write(mymissile->GetOwnerID());
 			bs3.Write(deleted);

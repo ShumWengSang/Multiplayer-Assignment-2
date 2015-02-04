@@ -9,6 +9,7 @@
 #include <vector>
 #include "RakPeerInterface.h"
 #include "ChatSystem.h"
+#include "SecondCustomPacket.h"
 
 class HGE;
 class hgeFont;

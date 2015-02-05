@@ -329,7 +329,7 @@ bool Application::SendInitialPosition()
 
 	std::cout << "Sending pos" << ships_.at(0)->GetX() << " " << ships_.at(0)->GetY() << std::endl;
 
-	rakpeer_->Send(data, strlen(data) + 1,HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+	rakpeer_->Send(data, sizeof(ShipPacket), HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 
 	return true;
 }
@@ -457,7 +457,7 @@ void Application::SendCollision( Ship* ship )
 
 	char data[sizeof(ShipPacket)];
 	theShip.Serialize(data);
-	rakpeer_->Send(data, strlen(data) + 1, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+	rakpeer_->Send(data, sizeof(ShipPacket), HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 
 }
 
@@ -480,7 +480,7 @@ void Application::CreateMissile(float x, float y, float w, int id)
 		theMissile.Serialize(data);
 		// send update throughnetwork to delete this missile
 		
-		rakpeer_->Send(data, strlen(data) + 1, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+		rakpeer_->Send(data, sizeof(MissilePacket), HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 
 		// delete existing missile
 		delete mymissile;
@@ -501,7 +501,7 @@ void Application::CreateMissile(float x, float y, float w, int id)
 	char data[sizeof(MissilePacket)];
 	theMissile.Serialize(data);
 
-	rakpeer_->Send(data, strlen(data) + 1, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+	rakpeer_->Send(data, sizeof(MissilePacket), HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 
 #else
 // Lab 10 Task 3 : Implement local version missile creation
@@ -523,7 +523,174 @@ bool Application::Receive()
 	if (Packet* packet = rakpeer_->Receive())
 	{
 		RakNet::BitStream bs(packet->data, packet->length, false);
-		
+		if (packet->length == sizeof(ShipPacket))
+		{
+			ShipPacket thePacket;
+			thePacket.Deserialize(packet->data);
+
+			switch (thePacket.theID)
+			{
+				case ID_MOVEMENT:
+					{
+						float x = thePacket.ServerX;  float y = thePacket.ServerY; float w = thePacket.ServerW;
+						int shipid = thePacket.ShipID;
+						float VelX = thePacket.ServerVelX; float VelY = thePacket.ServerVelY; float AngVel = thePacket.AngularVelocity;
+
+						for (ShipList::iterator itr = ships_.begin(); itr != ships_.end(); ++itr)
+						{
+							if ((*itr)->GetID() == shipid)
+							{
+								// this portion needs to be changed for it to work
+#ifdef INTERPOLATEMOVEMENT
+
+								(*itr)->SetServerLocation(x, y, w);
+
+								(*itr)->SetServerVelocityX(VelX);
+								(*itr)->SetServerVelocityY(VelY);
+								(*itr)->SetAngularVelocity(AngVel);
+
+								(*itr)->DoInterpolateUpdate();
+#else
+								bs.Read(x);
+								bs.Read(y);
+								bs.Read(w);
+								(*itr)->setLocation(x, y, w);
+
+								// Lab 7 Task 1 : Read Extrapolation Data velocity x, velocity y & angular velocity
+								bs.Read(temp);
+								(*itr)->SetVelocityX(temp);
+								bs.Read(temp);
+								(*itr)->SetVelocityY(temp);
+								bs.Read(temp);
+								(*itr)->SetAngularVelocity(temp);
+#endif
+
+								break;
+							}
+						}
+					}
+					break;
+				case ID_COLLIDE:
+					{
+						unsigned int shipid = thePacket.ShipID;
+						float x = thePacket.ServerX, y = thePacket.ServerY;
+						float velx = thePacket.VelX; float vely = thePacket.VelY;
+						float Svelx = thePacket.ServerVelX; float Svely = thePacket.ServerVelY;
+						if (shipid == ships_.at(0)->GetID())
+						{
+							std::cout << "collided with someone!" << std::endl;
+							ships_.at(0)->SetX(x);
+							ships_.at(0)->SetY(y);
+							ships_.at(0)->SetVelocityX(velx);
+							ships_.at(0)->SetVelocityY(vely);
+#ifdef INTERPOLATEMOVEMENT
+							ships_.at(0)->SetServerVelocityX(Svelx);
+							ships_.at(0)->SetServerVelocityY(Svely);
+#endif	
+						}
+					}
+					break;
+				case ID_INITIALPOS:
+					{
+					}
+					break;
+
+				case ID_NEWSHIP:
+					{
+						unsigned int id = thePacket.ShipID;
+						if (id == ships_.at(0)->GetID())
+						{
+							// if it is me
+							break;
+						}
+						else
+						{
+							float x_ = thePacket.ServerX, y_ = thePacket.ServerY;
+							int type_ = thePacket.ShipType;
+
+							std::string temp;
+							char chartemp[5];
+
+							std::cout << "New Ship pos" << x_ << " " << y_ << std::endl;
+							Ship* ship = new Ship(type_, x_, y_);
+							temp = "Ship ";
+							temp += _itoa(id, chartemp, 10);
+							ship->SetName(temp.c_str());
+							ship->setID(id);
+							ships_.push_back(ship);
+						}
+					}
+					break;
+
+				case ID_LOSTSHIP:
+					{
+						unsigned int shipid;
+						shipid = thePacket.ShipID;
+						for (ShipList::iterator itr = ships_.begin(); itr != ships_.end(); ++itr)
+						{
+							if ((*itr)->GetID() == shipid)
+							{
+								delete *itr;
+								ships_.erase(itr);
+								break;
+							}
+						}
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		else if (packet->length == sizeof(MissilePacket))
+		{
+			MissilePacket thePacket;
+			thePacket.Deserialize(packet->data);
+
+			switch (thePacket.theID)
+			{
+				case ID_NEWMISSILE:
+					{
+						float x = thePacket.X; float y = thePacket.Y; float w = thePacket.W;
+						int id = thePacket.OwnerID;
+						missiles_.push_back(new Missile("missile.png", x, y, w, id));
+					}
+					break;
+				case ID_UPDATEMISSILE:
+					{
+						float x, y, w;
+						int id;
+						char deleted;
+						id = thePacket.OwnerID;
+						x = thePacket.X; y = thePacket.Y; w = thePacket.W;
+						deleted = thePacket.deleted;
+						float velX, velY;
+						velX = thePacket.VelX;
+						velY = thePacket.VelY;
+						for (MissileList::iterator itr = missiles_.begin(); itr != missiles_.end(); ++itr)
+						{
+							if ((*itr)->GetOwnerID() == id)
+							{
+								if (deleted == 1)
+								{
+									delete *itr;
+									missiles_.erase(itr);
+								}
+								else
+								{
+									(*itr)->UpdateLoc(x, y, w);
+									(*itr)->SetVelocityX(velX);
+									(*itr)->SetVelocityY(velY);
+								}
+								break;
+							}
+						}
+					}
+					break;
+				default:
+					break;
+			}
+		}
+
 		unsigned char msgid = 0;
 		RakNet::Time timestamp = 0;
 
@@ -535,239 +702,68 @@ bool Application::Receive()
 			bs.Read(msgid);
 		}
 
-		switch(msgid)
+		switch (msgid)
 		{
-		case ID_CONNECTION_REQUEST_ACCEPTED:
-			std::cout << "Connected to Server" << std::endl;
-			break;
+			case ID_CONNECTION_REQUEST_ACCEPTED:
+				std::cout << "Connected to Server" << std::endl;
+				break;
 
-		case ID_NO_FREE_INCOMING_CONNECTIONS:
-		case ID_CONNECTION_LOST:
-		case ID_DISCONNECTION_NOTIFICATION:
-			std::cout << "Lost Connection to Server" << std::endl;
-			rakpeer_->DeallocatePacket(packet);
-			return true;
+			case ID_NO_FREE_INCOMING_CONNECTIONS:
+			case ID_CONNECTION_LOST:
+			case ID_DISCONNECTION_NOTIFICATION:
+				std::cout << "Lost Connection to Server" << std::endl;
+				rakpeer_->DeallocatePacket(packet);
+				return true;
 
-		case ID_WELCOME:
-			{
-				unsigned int shipcount, id;
-				float x_, y_;
-				int type_;
-				std::string temp;
-				char chartemp[5];
-
-				bs.Read(id);
-				ships_.at(0)->setID( id );	
-				bs.Read(shipcount);
-
-				for (unsigned int i = 0; i < shipcount; ++ i)
+			case ID_WELCOME:
 				{
-					bs.Read(id);
-					bs.Read(x_);
-					bs.Read(y_);
-					bs.Read(type_);
-					std::cout << "New Ship pos" << x_ << " " << y_ << std::endl;
-					Ship* ship = new Ship(type_, x_, y_ ); 
-					temp = "Ship ";
-					temp += _itoa(id, chartemp, 10);
-					ship->SetName(temp.c_str());
-					ship->setID( id );
-					ships_.push_back(ship);
-				}
-
-				SendInitialPosition();
-			}
-			break;
-
-		case ID_NEWSHIP:
-			{
-				unsigned int id;
-				bs.Read(id);
-
-				if( id == ships_.at(0)->GetID() )
-				{
-					// if it is me
-					break;
-				}
-				else
-				{
+					unsigned int shipcount, id;
 					float x_, y_;
 					int type_;
 					std::string temp;
 					char chartemp[5];
 
-					bs.Read( x_ );
-					bs.Read( y_ );
-					bs.Read( type_ );
-					std::cout << "New Ship pos" << x_ << " " << y_ << std::endl;
-					Ship* ship = new Ship(type_, x_, y_);
-					temp = "Ship "; 
-					temp += _itoa(id, chartemp, 10);
-					ship->SetName(temp.c_str());
-					ship->setID( id );
-					ships_.push_back(ship);
-				}
+					bs.Read(id);
+					ships_.at(0)->setID(id);
+					bs.Read(shipcount);
 
-			}
-			break;
-
-		case ID_LOSTSHIP:
-			{
-				unsigned int shipid;
-				bs.Read(shipid);
-				for (ShipList::iterator itr = ships_.begin(); itr != ships_.end(); ++itr)
-				{
-					if ((*itr)->GetID() == shipid)
+					for (unsigned int i = 0; i < shipcount; ++i)
 					{
-						delete *itr;
-						ships_.erase(itr);
-						break;
+						bs.Read(id);
+						bs.Read(x_);
+						bs.Read(y_);
+						bs.Read(type_);
+						std::cout << "New Ship pos" << x_ << " " << y_ << std::endl;
+						Ship* ship = new Ship(type_, x_, y_);
+						temp = "Ship ";
+						temp += _itoa(id, chartemp, 10);
+						ship->SetName(temp.c_str());
+						ship->setID(id);
+						ships_.push_back(ship);
 					}
-				}
-			}
-			break;
 
-		case ID_INITIALPOS:
-			break;
-
-		case ID_MOVEMENT:
-			{
-				ShipPacket theShip;
-				char data[sizeof(ShipPacket)];
-				bs.Read(data);
-				//theShip.Deserialize(data);
-
-				float x = theShip.ServerX;  float y = theShip.ServerY; float w = theShip.ServerW;
-				unsigned int shipid = theShip.ShipID;
-				float VelX = theShip.ServerVelX; float VelY = theShip.ServerVelY; float AngVel = theShip.AngularVelocity;
-
-				for (ShipList::iterator itr = ships_.begin(); itr != ships_.end(); ++itr)
-				{
-					if ((*itr)->GetID() == shipid)
-					{
-						// this portion needs to be changed for it to work
-#ifdef INTERPOLATEMOVEMENT
-
-						(*itr)->SetServerLocation( x, y, w ); 
-
-						(*itr)->SetServerVelocityX(VelX);
-						(*itr)->SetServerVelocityY(VelY);
-						(*itr)->SetAngularVelocity(AngVel);
-
-						(*itr)->DoInterpolateUpdate();
-#else
-						bs.Read(x);
-						bs.Read(y);
-						bs.Read(w);
-						(*itr)->setLocation( x, y, w ); 
-
-						// Lab 7 Task 1 : Read Extrapolation Data velocity x, velocity y & angular velocity
-						bs.Read(temp);
-						(*itr)->SetVelocityX( temp );
-						bs.Read(temp);
-						(*itr)->SetVelocityY( temp );
-						bs.Read(temp);
-						(*itr)->SetAngularVelocity( temp );
-#endif
-
-						break;
-					}
-				}
-			}
-			break;
-
-		case ID_COLLIDE:
-			{
-				unsigned int shipid;
-				float x, y;
-				bs.Read(shipid);
-				
-				if( shipid == ships_.at(0)->GetID() )
-				{
-					std::cout << "collided with someone!" << std::endl;
-					bs.Read(x);
-					bs.Read(y);
-					ships_.at(0)->SetX( x );
-					ships_.at(0)->SetY( y );
-					bs.Read(x);
-					bs.Read(y);
-					ships_.at(0)->SetVelocityX( x );
-					ships_.at(0)->SetVelocityY( y );
-#ifdef INTERPOLATEMOVEMENT
-					bs.Read(x);
-					bs.Read(y);
-					ships_.at(0)->SetServerVelocityX( x );
-					ships_.at(0)->SetServerVelocityY( y );
-#endif	
-				}
-			}
-			break;
-
-
-		// Lab 10 Task 10 : new cases to handle missile on application side
-		
-			case ID_NEWMISSILE:
-	{
-		float x, y, w;
-		int id;
-
-		bs.Read(id);
-		bs.Read(x);
-		bs.Read(y);
-		bs.Read(w);
-
-		missiles_.push_back( new Missile( "missile.png", x, y, w, id ) );
-	}
-	break;
-	case ID_UPDATEMISSILE:
-	{
-		float x,y,w;
-		int id;
-		char deleted;
-
-		bs.Read(id);
-		bs.Read(deleted);
-
-		for (MissileList::iterator itr = missiles_.begin(); itr != missiles_.end(); ++itr)
-		{
-			if( (*itr)->GetOwnerID() == id )
-			{
-				if( deleted == 1)
-				{
-					delete *itr;
-					missiles_.erase(itr);
-				}
-				else
-				{
-					bs.Read( x );
-					bs.Read( y );
-					bs.Read( w );
-					(*itr)->UpdateLoc( x, y, w );
-					bs.Read( x );
-					(*itr)->SetVelocityX(x);
-					bs.Read(y);
-					(*itr)->SetVelocityY(y);
+					SendInitialPosition();
 				}
 				break;
-			}
-		}
-	}
 
-	case ID_REJECT:
-	{
-		ExitGameMessage = true;
-	}
-	break;
-	case ID_MESSAGE:
-	{
-		char Message[50];
-		bs.Read(Message);
-		theChat->ReceiveString(Message);
-	}
-	break;
+			case ID_INITIALPOS:
+				break;
 
-	default:
-		std::cout << "Unhandled Message Identifier: " << (int)msgid << std::endl;
+			case ID_REJECT:
+				{
+					ExitGameMessage = true;
+				}
+				break;
+			case ID_MESSAGE:
+				{
+					char Message[50];
+					bs.Read(Message);
+					theChat->ReceiveString(Message);
+				}
+				break;
+
+			default:
+				std::cout << "Unhandled Message Identifier: " << (int)msgid << std::endl;
 
 		}
 		rakpeer_->DeallocatePacket(packet);
@@ -818,7 +814,7 @@ void Application::Send()
 		bs2.Write(ships_.at(0)->GetAngularVelocity());
 #endif
 
-		rakpeer_->Send((char *)data, strlen(data) + 1, HIGH_PRIORITY, RELIABLE, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+		rakpeer_->Send((char *)data, sizeof(ShipPacket), HIGH_PRIORITY, RELIABLE, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 
 
 		// Lab 10 Task 11 : send missile update 
@@ -846,7 +842,7 @@ void Application::Send()
 			bs3.Write(mymissile->GetVelocityX());
 			bs3.Write(mymissile->GetVelocityY());*/
 
-			rakpeer_->Send(Message, strlen(Message) + 1, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+			rakpeer_->Send(Message, sizeof(MissilePacket), HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 		}
 
 		std::string Message = theChat->StringtoSend();
@@ -866,7 +862,7 @@ void Application::Send()
 			thePacket.Message[sizeof(thePacket.Message) - 1] = '\0';
 			thePacket.Serialize(data);
 
-			rakpeer_->Send(data, strlen(data) + 1, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+			rakpeer_->Send(data, sizeof(MessagePacket) , HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 		}
 	}
 }

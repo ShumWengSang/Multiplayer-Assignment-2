@@ -28,7 +28,17 @@ void ServerApp::Loop()
 	if (Packet* packet = rakpeer_->Receive())
 	{
 		RakNet::BitStream bs(packet->data, packet->length, false);
-		
+
+		if(packet->length == sizeof(ShipPacket))
+		{
+			ShipPacket thePacket;
+			thePacket.Deserialize(packet->data);
+		}
+		else if(packet->length == sizeof(MissilePacket))
+		{
+			MissilePacket thePacket;
+			thePacket.Deserialize(packet->data);
+		}
 		unsigned char msgid = 0;
 		RakNet::Time timestamp = 0;
 
@@ -71,7 +81,7 @@ void ServerApp::Loop()
 				ShipPacket theShip;
 				char data[sizeof(ShipPacket)];
 				bs.Read(data);
-				theShip.Deserialize(data);
+//				theShip.Deserialize(data);
 
 
 				float x = theShip.ServerX;  float y = theShip.ServerY;

@@ -2,8 +2,17 @@
 struct SecondCustomPacket
 {
 	MyMsgIDs theID;
-	virtual void Serialize(char * data) = 0;
-	virtual void Deserialize(char * data) = 0;
+	virtual void Serialize(char * data)
+	{
+		memcpy(data, this, sizeof(SecondCustomPacket));
+	}
+	virtual void Deserialize(char * data)
+	{
+
+		memcpy(this, data, sizeof(SecondCustomPacket));
+		//theID = ntohl(theID);
+		//EndianSwapToHost(theID);
+	}
 
 	void EndianSwapToNetwork(int &value)
 	{
@@ -48,7 +57,7 @@ struct MissilePacket : public SecondCustomPacket
 		memcpy(data, this, sizeof(MissilePacket));
 	}
 
-	void Deserialize(char * data)
+	void Deserialize(unsigned char * data)
 	{
 		memcpy(this, data, sizeof(MissilePacket));
 
@@ -69,10 +78,12 @@ struct ShipPacket : public SecondCustomPacket
 	float ServerX;
 	float ServerY;
 	float ServerW;
-
+	float VelX;
+	float VelY;
 	float ServerVelX;
 	float ServerVelY;
 	float AngularVelocity;
+	int ShipType;
 
 	void Serialize(char * data)
 	{
@@ -83,11 +94,12 @@ struct ShipPacket : public SecondCustomPacket
 		EndianSwapToNetwork(ServerVelX);
 		EndianSwapToNetwork(ServerVelY);
 		EndianSwapToNetwork(AngularVelocity);
+		EndianSwapToNetwork(ShipType);
 
 		memcpy(data, this, sizeof(ShipPacket));
 	}
 
-	void Deserialize(char * data)
+	void Deserialize(unsigned char * data)
 	{
 		memcpy(this, data, sizeof(ShipPacket));
 
@@ -98,6 +110,7 @@ struct ShipPacket : public SecondCustomPacket
 		EndianSwapToHost(ServerVelX);
 		EndianSwapToHost(ServerVelY);
 		EndianSwapToHost(AngularVelocity);
+		EndianSwapToHost(ShipType);
 	}
 };
 

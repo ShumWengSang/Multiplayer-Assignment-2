@@ -311,16 +311,25 @@ void Application::Start()
 
 bool Application::SendInitialPosition()
 {
-	RakNet::BitStream bs;
+	ShipPacket theShip;
+
+	theShip.theID = ID_INITIALPOS;
+	theShip.ServerX = ships_.at(0)->GetX();
+	theShip.ServerY = ships_.at(0)->GetY();
+	theShip.ShipType = ships_.at(0)->GetType();
+
+	char data[sizeof(ShipPacket)];
+	theShip.Serialize(data);
+	/*RakNet::BitStream bs;
 	unsigned char msgid = ID_INITIALPOS;
 	bs.Write(msgid);
 	bs.Write(ships_.at(0)->GetX());
 	bs.Write(ships_.at(0)->GetY());
-	bs.Write(ships_.at(0)->GetType());
+	bs.Write(ships_.at(0)->GetType());*/
 
 	std::cout << "Sending pos" << ships_.at(0)->GetX() << " " << ships_.at(0)->GetY() << std::endl;
 
-	rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+	rakpeer_->Send(data, strlen(data) + 1,HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 
 	return true;
 }
@@ -423,20 +432,32 @@ bool Application::checkCollisions(Ship* ship)
 
 void Application::SendCollision( Ship* ship )
 {
-	RakNet::BitStream bs;
-	unsigned char msgid = ID_COLLIDE;
-	bs.Write( msgid );
-	bs.Write( ship->GetID() );
-	bs.Write( ship->GetX() );
-	bs.Write( ship->GetY() );
-	bs.Write( ship->GetVelocityX() );
-	bs.Write( ship->GetVelocityY() );
+	//RakNet::BitStream bs;
+	//unsigned char msgid = ID_COLLIDE;
+//	bs.Write( msgid );
+//	bs.Write( ship->GetID() );
+	//bs.Write( ship->GetX() );
+	//bs.Write( ship->GetY() );
+	//bs.Write( ship->GetVelocityX() );
+	//bs.Write( ship->GetVelocityY() );
 #ifdef INTERPOLATEMOVEMENT
-	bs.Write( ship->GetServerVelocityX() );
-	bs.Write( ship->GetServerVelocityY() );
+	//bs.Write( ship->GetServerVelocityX() );
+	//bs.Write( ship->GetServerVelocityY() );
 #endif
 
-	rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+	ShipPacket theShip;
+	theShip.theID = ID_COLLIDE;
+	theShip.ShipID = ship->GetID();
+	theShip.ServerX = ship->GetX();
+	theShip.ServerY = ship->GetY();
+	theShip.VelX = ship->GetVelocityX();
+	theShip.VelY = ship->GetVelocityY();
+	theShip.ServerVelX = ship->GetServerVelocityX();
+	theShip.ServerVelY = ship->GetServerVelocityY();
+
+	char data[sizeof(ShipPacket)];
+	theShip.Serialize(data);
+	rakpeer_->Send(data, strlen(data) + 1, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 
 }
 
@@ -614,7 +635,7 @@ bool Application::Receive()
 				ShipPacket theShip;
 				char data[sizeof(ShipPacket)];
 				bs.Read(data);
-				theShip.Deserialize(data);
+				//theShip.Deserialize(data);
 
 				float x = theShip.ServerX;  float y = theShip.ServerY; float w = theShip.ServerW;
 				unsigned int shipid = theShip.ShipID;

@@ -190,57 +190,72 @@ struct CustomPacket
 
 };
 
-void main ()
-{
-	//CustomPacket thePacket;
-	//int i = 10;
-
-	//CRC4 RC4;
-
-	//std::string  yolo = thePacket.Convert(i);
-	//std::string yolo2 = thePacket.Convert(20.f);
-	//std::string yolo3 = thePacket.Convert(5.f);
-	//std::string yolo4 = thePacket.Convert(std::string("hello"));
-	//thePacket.Add(yolo);
-	//thePacket.Add(yolo2);
-	//thePacket.Add(yolo3);
-	//thePacket.Add(yolo4);
-	//thePacket.Serialization();
-
-	//std::cout << thePacket.theRealMessage << std::endl;
-
-	//RC4.Encrypt(thePacket.theRealMessage, "key");
-
-	//std::cout << thePacket.theRealMessage << std::endl;
-
-	//CustomPacket theSecondPacket;
-	//theSecondPacket.Deserialization(thePacket.theRealMessage);
-	////std::cout << theSecondPacket.theRealMessage << theSecondPacket.NextTarget << std::endl;
-
-	//RC4.Decrypt(theSecondPacket.theRealMessage, "key");
-
-	//theSecondPacket.UnPack();
-	//std::cout << theSecondPacket.theRealMessage << theSecondPacket.NextTarget << std::endl;
-	//int a;
-	//float b, c;
-	//std::string testing;
-	//theSecondPacket.Get(a);
-	//theSecondPacket.Get(b);
-	//theSecondPacket.Get(c);
-	//theSecondPacket.Get(testing);
-	//std::cout << a <<" " << b << " "<< c << " " << testing << std::endl;
-	//int q = sizeof(char);
-
-	DHKey first;
-	DHKey second;
-
-	int i = first.GetFirstExchange();
-	int k = second.GetFirstExchange();
-
-	first.ComputeKey(k);
-	second.ComputeKey(i);
-
-	std::cout << "First: " << first.GetKey() << " : " << "Second: " << second.GetKey();
-
-	system("pause");
-}
+//void main ()
+//{
+//	//CustomPacket thePacket;
+//	//int i = 10;
+//
+//	//CRC4 RC4;
+//
+//	//std::string  yolo = thePacket.Convert(i);
+//	//std::string yolo2 = thePacket.Convert(20.f);
+//	//std::string yolo3 = thePacket.Convert(5.f);
+//	//std::string yolo4 = thePacket.Convert(std::string("hello"));
+//	//thePacket.Add(yolo);
+//	//thePacket.Add(yolo2);
+//	//thePacket.Add(yolo3);
+//	//thePacket.Add(yolo4);
+//	//thePacket.Serialization();
+//
+//	//std::cout << thePacket.theRealMessage << std::endl;
+//
+//	//RC4.Encrypt(thePacket.theRealMessage, "key");
+//
+//	//std::cout << thePacket.theRealMessage << std::endl;
+//
+//	//CustomPacket theSecondPacket;
+//	//theSecondPacket.Deserialization(thePacket.theRealMessage);
+//	////std::cout << theSecondPacket.theRealMessage << theSecondPacket.NextTarget << std::endl;
+//
+//	//RC4.Decrypt(theSecondPacket.theRealMessage, "key");
+//
+//	//theSecondPacket.UnPack();
+//	//std::cout << theSecondPacket.theRealMessage << theSecondPacket.NextTarget << std::endl;
+//	//int a;
+//	//float b, c;
+//	//std::string testing;
+//	//theSecondPacket.Get(a);
+//	//theSecondPacket.Get(b);
+//	//theSecondPacket.Get(c);
+//	//theSecondPacket.Get(testing);
+//	//std::cout << a <<" " << b << " "<< c << " " << testing << std::endl;
+//	//int q = sizeof(char);
+//
+//	DHKey first;
+//	DHKey second;
+//	DHKey third;
+//
+//	time_t timer;
+//
+//	srand(time(&timer));
+//
+//
+//
+//
+//	int a = first.GetFirstExchange();
+//	int B = second.Exchange(a);
+//	third.ComputeKey(B);
+//
+//	int b = second.GetFirstExchange();
+//	int C = third.Exchange(b);
+//	first.ComputeKey(C);
+//
+//	int c = third.GetFirstExchange();
+//	int A = first.Exchange(c);
+//	second.ComputeKey(A);
+//
+//
+//	std::cout << "First: " << first.GetKey() << " : " << "Second: " << second.GetKey() << "third: " << third.GetKey();
+//
+//	system("pause");
+//}

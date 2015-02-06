@@ -47,7 +47,6 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\RakNet\Source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -56,6 +55,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <AdditionalIncludeDirectories>../RakNet/Source;../DiffieHelman;$(SolutionDir)DiffieHelman</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>RakNet_VS2008_DLL_Debug_Win32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -90,10 +90,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\DiffieHelman\DiffieHelmanKey.cpp" />
     <ClCompile Include="Server.cpp" />
     <ClCompile Include="ServerApp.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\DiffieHelman\DiffieHelmanKey.h" />
     <ClInclude Include="ServerApp.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -16,6 +16,7 @@ public:
 	unsigned int GetKey();
 	void ChooseSecretInt();
 	unsigned int GetFirstExchange();
+	unsigned int Exchange(unsigned int);
 
 	void ComputeKey(unsigned int);
 };

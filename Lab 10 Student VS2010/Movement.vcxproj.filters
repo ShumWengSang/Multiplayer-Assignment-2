@@ -13,13 +13,13 @@
     <ClCompile Include="ship.cpp">
       <Filter>CPP</Filter>
     </ClCompile>
-    <ClCompile Include="DHKey.cpp">
-      <Filter>CPP</Filter>
-    </ClCompile>
     <ClCompile Include="ChatSystem.cpp">
       <Filter>CPP</Filter>
     </ClCompile>
     <ClCompile Include="ChatBackground.cpp">
+      <Filter>CPP</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffieHelman\DiffieHelmanKey.cpp">
       <Filter>CPP</Filter>
     </ClCompile>
   </ItemGroup>
@@ -52,7 +52,7 @@
     <ClInclude Include="ChatBackground.h">
       <Filter>Header</Filter>
     </ClInclude>
-    <ClInclude Include="DHKey.h">
+    <ClInclude Include="DiffieHelman\DiffieHelmanKey.h">
       <Filter>Header</Filter>
     </ClInclude>
   </ItemGroup>

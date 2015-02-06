@@ -22,6 +22,10 @@ namespace Global
 */
 int main(int argc, char** argv_)
 {
+	time_t timer;
+	timer = time(NULL);
+	srand(time(&timer));
+
 	try 
 	{
 		Application app;

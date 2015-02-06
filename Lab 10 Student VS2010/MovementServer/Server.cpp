@@ -3,6 +3,10 @@
 
 int main()
 {
+	time_t timer;
+	timer = time(NULL);
+	srand(time(&timer));
+
 	ServerApp app;
 	while (true)
 	{

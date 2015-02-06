@@ -10,6 +10,8 @@
 #include "RakPeerInterface.h"
 #include "ChatSystem.h"
 #include "SecondCustomPacket.h"
+#include "DiffieHelman\DiffieHelmanKey.h"
+#include "CRC4.h"
 
 class HGE;
 class hgeFont;
@@ -63,6 +65,11 @@ class Application
 	bool Keyboard(float timedelta);
 
 	bool RecordedTimeN;
+
+	bool KeyExchange;
+
+	CRC4 RC4;
+	DiffieHelmanKey Key;
 
 public:
 	Application();

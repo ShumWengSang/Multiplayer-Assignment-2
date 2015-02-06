@@ -3,6 +3,8 @@
 
 #include "RakPeerInterface.h"
 #include <map>
+#include "DiffieHelmanKey.h"
+#include "../CRC4.h"
 
 using namespace RakNet;
 
@@ -34,6 +36,9 @@ class ServerApp
 	void SendDisconnectionNotification(SystemAddress& addr);
 	void ProcessInitialPosition( SystemAddress& addr, float x_, float y_, int type_);
 	void UpdatePosition( SystemAddress& addr, float x_, float y_ );
+
+	CRC4 RC4;
+	DiffieHelmanKey Key;
 
 public:
 	ServerApp();

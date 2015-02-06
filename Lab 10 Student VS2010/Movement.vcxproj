@@ -47,7 +47,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>hge16\include;RakNet\Source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>hge16\include;RakNet\Source;$(SolutionDir)DiffieHelman;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -58,7 +58,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>hge.lib;hgehelp.lib;RakNet_VS2008_DLL_Debug_Win32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>hge.lib;hgehelp.lib;RakNet_VS2008_DLL_Debug_Win32.lib;ws2_32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)Movement.exe</OutputFile>
       <AdditionalLibraryDirectories>hge16\lib\vc;RakNet\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>libc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
@@ -96,7 +96,7 @@
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="ChatBackground.cpp" />
     <ClCompile Include="ChatSystem.cpp" />
-    <ClCompile Include="DHKey.cpp" />
+    <ClCompile Include="DiffieHelman\DiffieHelmanKey.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="missile.cpp" />
     <ClCompile Include="ship.cpp" />
@@ -107,7 +107,7 @@
     <ClInclude Include="ChatSystem.h" />
     <ClInclude Include="CRC4.h" />
     <ClInclude Include="CustomPacket.h" />
-    <ClInclude Include="DHKey.h" />
+    <ClInclude Include="DiffieHelman\DiffieHelmanKey.h" />
     <ClInclude Include="Globals.h" />
     <ClInclude Include="missile.h" />
     <ClInclude Include="MyMsgIDs.h" />

@@ -43,6 +43,7 @@ Application::Application()
 	ExitGameMessage = false;
 	RecordedTimeN = false;
 	keydown_space = false;
+	KeyExchange = true;
 }
 
 /**
@@ -597,6 +598,7 @@ bool Application::Receive()
 
 				case ID_NEWSHIP:
 					{
+						KeyExchange = true;
 						unsigned int id = thePacket.ShipID;
 						if (id == ships_.at(0)->GetID())
 						{
@@ -717,6 +719,7 @@ bool Application::Receive()
 
 			case ID_WELCOME:
 				{
+					KeyExchange = true;
 					unsigned int shipcount, id;
 					float x_, y_;
 					int type_;
@@ -761,9 +764,38 @@ bool Application::Receive()
 					theChat->ReceiveString(Message);
 				}
 				break;
+			case ID_KEYEXCHANGE:
+				{
+					int b;
+					bs.Read(b);
+					Key.SharedSecretKey(Key.p_number, Key.random, b);
+
+					std::cout << "KEY: " << Key.GetSecretKey() << std::endl;
+
+					RakNet::BitStream bs2;
+					int i = Key.CreatePublicKey(Key.p_number, Key.Base, Key.random);
+					unsigned char ID = ID_KEYEXCHANGETWO;
+					bs2.Write(ID);
+					bs2.Write(i);
+					rakpeer_->Send(&bs2, HIGH_PRIORITY, RELIABLE, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+				}
+				break;
+			case ID_KEYEXCHANGETWO:
+				{
+					int b;
+					bs.Read(b);
+					int i = Key.CreatePublicKey(Key.p_number, b, Key.random);
+					RakNet::BitStream bs2;
+					unsigned char ID = ID_KEYEXCHANGETHREE;
+					bs2.Write(ID);
+					bs2.Write(i);
+					rakpeer_->Send(&bs2, HIGH_PRIORITY, RELIABLE, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+				}
+				break;
 
 			default:
-				std::cout << "Unhandled Message Identifier: " << (int)msgid << std::endl;
+				break;
+				//std::cout << "Unhandled Message Identifier: " << (int)msgid << std::endl;
 
 		}
 		rakpeer_->DeallocatePacket(packet);
@@ -863,6 +895,19 @@ void Application::Send()
 			thePacket.Serialize(data);
 
 			rakpeer_->Send(data, sizeof(MessagePacket) , HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+		}
+
+		if (KeyExchange)
+		{
+			std::cout << "SEND" << std::endl;
+			int AlicePubKey = Key.CreatePublicKey(Key.p_number, Key.Base, Key.random);
+			RakNet::BitStream bs;
+			unsigned char msgid = ID_KEYEXCHANGE;
+			AlicePubKey = htonl(AlicePubKey);
+			bs.Write(msgid);
+			bs.Write(AlicePubKey);
+			KeyExchange = false;
+			rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 		}
 	}
 }

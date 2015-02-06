@@ -1,16 +1,11 @@
 //Sources: http://en.wikipedia.org/wiki/RC4
 ////www.codeproject.com
-
+#pragma once
 #include <array>
 #include <cstring>
 
 //Use XOR to swap them around.
-void Swap(unsigned char & a, unsigned char & b)
-{
-	(a) ^= (b);
-	(b) ^= (a);
-	(a) ^= (b);
-}
+
 
 class CRC4 
 {
@@ -79,5 +74,12 @@ public:
 	char *Decrypt(char *pszText, const char *pszKey)
 	{
 		return Encrypt(pszText, pszKey);  /* using the same function as encoding */
+	}
+
+	void Swap(unsigned char & a, unsigned char & b)
+	{
+		(a) ^= (b);
+		(b) ^= (a);
+		(a) ^= (b);
 	}
 };

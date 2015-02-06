@@ -15,6 +15,7 @@ ServerApp::ServerApp() :
 	rakpeer_->SetOccasionalPing(true);
 	std::cout << "Server Started" << std::endl;
 	NumofPlayers = 0;
+
 }
 
 ServerApp::~ServerApp()
@@ -107,27 +108,60 @@ void ServerApp::Loop()
 
 		switch (msgid)
 		{
-		case ID_NEW_INCOMING_CONNECTION:
-			if (NumofPlayers < 2)
-				SendWelcomePackage(packet->systemAddress);
-			else
-				SendRejectPackage(packet->systemAddress);
-			break;
+			case ID_NEW_INCOMING_CONNECTION:
+				if (NumofPlayers < 2)
+					SendWelcomePackage(packet->systemAddress);
+				else
+					SendRejectPackage(packet->systemAddress);
+				break;
 
-		case ID_DISCONNECTION_NOTIFICATION:
-		case ID_CONNECTION_LOST:
-			SendDisconnectionNotification(packet->systemAddress);
-			break;
+			case ID_DISCONNECTION_NOTIFICATION:
+			case ID_CONNECTION_LOST:
+				SendDisconnectionNotification(packet->systemAddress);
+				break;
 
-		case ID_MESSAGE:
-		{
-			bs.ResetReadPointer();
-			rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE, 0, packet->systemAddress, true);
-		}
-		break;
-
-		default:
-			std::cout << "Unhandled Message Identifier: " << (int)msgid << std::endl;
+			case ID_MESSAGE:
+				{
+					bs.ResetReadPointer();
+					rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE, 0, packet->systemAddress, true);
+				}
+				break;
+			case ID_KEYEXCHANGE:
+				{
+					//std::cout << "I RECEVE KEYEXCHANGE 1" << std::endl;
+					float i;
+					bs.Read(i);
+					i = ntohl(i);
+					bs.ResetReadPointer();
+					
+					RakNet::BitStream bs2;
+					unsigned char ID = ID_KEYEXCHANGE;
+					bs2.Write(ID);
+					int a = Key.CreatePublicKey(Key.p_number, i, Key.random);
+					bs2.Write(a);
+					rakpeer_->Send(&bs2, HIGH_PRIORITY, RELIABLE, 0, packet->systemAddress, true);
+				}
+				break;
+			case ID_KEYEXCHANGETWO:
+				{
+					bs.ResetReadPointer();
+					rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE, 0, packet->systemAddress, true);
+				}
+				break;
+			case ID_KEYEXCHANGETHREE:
+				{
+					time_t timer;
+					timer = time(NULL);
+					srand(time(&timer));
+					float i;
+					bs.Read(i);
+					Key.SharedSecretKey(Key.p_number, Key.random, i);
+					std::cout <<"KEY: " <<  Key.GetSecretKey() << std::endl;
+				}
+				break;
+			default:
+				break;
+			//std::cout << "Unhandled Message Identifier: " << (int)msgid << std::endl;
 		}
 
 		rakpeer_->DeallocatePacket(packet);

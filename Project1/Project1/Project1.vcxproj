@@ -64,11 +64,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="DHKey.cpp" />
+    <ClCompile Include="DiffieHelmanKey.cpp" />
     <ClCompile Include="Source.cpp" />
+    <ClCompile Include="Source1.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CRC4.h" />
     <ClInclude Include="DHKey.h" />
+    <ClInclude Include="DiffieHelmanKey.h" />
     <ClInclude Include="SecondCustomPacket.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

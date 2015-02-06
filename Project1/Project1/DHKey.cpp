@@ -3,7 +3,7 @@
 
 DHKey::DHKey()
 {
-	srand(time(NULL));
+	//srand(time(NULL));
 	Prime = 23;
 	Base = 4;
 	ChooseSecretInt();
@@ -34,4 +34,10 @@ void DHKey::ComputeKey(unsigned int temp)
 {
 	unsigned int temp2 = pow(temp, SecretInt);
 	Key = temp2 % Prime;
+}
+
+unsigned int DHKey::Exchange(unsigned int other)
+{
+	unsigned int temp2 = pow(other, SecretInt);
+	return temp2 % Prime;
 }

@@ -43,7 +43,7 @@ Application::Application()
 	ExitGameMessage = false;
 	RecordedTimeN = false;
 	keydown_space = false;
-	KeyExchange = true;
+	KeyExchange = false;
 }
 
 /**
@@ -777,6 +777,8 @@ bool Application::Receive()
 					unsigned char ID = ID_KEYEXCHANGETWO;
 					bs2.Write(ID);
 					bs2.Write(i);
+					
+
 					rakpeer_->Send(&bs2, HIGH_PRIORITY, RELIABLE, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 				}
 				break;
@@ -825,7 +827,7 @@ void Application::Send()
 
 		char data[sizeof(ShipPacket)];
 		theShip.Serialize(data);
-
+		char * Edata = RC4.Encrypt(data, Key.GetSecretKeyC());
 
 		//bs2.Write(ships_.at(0)->GetID());
 		//bs2.Write(ships_.at(0)->GetServerX());
@@ -846,7 +848,7 @@ void Application::Send()
 		bs2.Write(ships_.at(0)->GetAngularVelocity());
 #endif
 
-		rakpeer_->Send((char *)data, sizeof(ShipPacket), HIGH_PRIORITY, RELIABLE, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+		rakpeer_->Send(Edata, sizeof(ShipPacket), HIGH_PRIORITY, RELIABLE, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 
 
 		// Lab 10 Task 11 : send missile update 
@@ -866,6 +868,7 @@ void Application::Send()
 			
 			char Message[sizeof(MissilePacket)];
 			theMissile.Serialize(Message);
+			char * Edata = RC4.Encrypt(data, Key.GetSecretKeyC());
 			/*	bs3.Write(mymissile->GetOwnerID());
 			bs3.Write(deleted);
 			bs3.Write(mymissile->GetX());
@@ -903,7 +906,7 @@ void Application::Send()
 			int AlicePubKey = Key.CreatePublicKey(Key.p_number, Key.Base, Key.random);
 			RakNet::BitStream bs;
 			unsigned char msgid = ID_KEYEXCHANGE;
-			AlicePubKey = htonl(AlicePubKey);
+			//AlicePubKey = htonl(AlicePubKey);
 			bs.Write(msgid);
 			bs.Write(AlicePubKey);
 			KeyExchange = false;

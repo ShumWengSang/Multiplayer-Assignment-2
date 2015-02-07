@@ -28,8 +28,6 @@ void ServerApp::Loop()
 {
 	if (Packet* packet = rakpeer_->Receive())
 	{
-		RakNet::BitStream bs(packet->data, packet->length, false);
-
 		if(packet->length == sizeof(ShipPacket))
 		{
 			ShipPacket thePacket;
@@ -95,76 +93,79 @@ void ServerApp::Loop()
 			}
 
 		}
-		unsigned char msgid = 0;
-		RakNet::Time timestamp = 0;
-
-		bs.Read(msgid);
-
-		if (msgid == ID_TIMESTAMP)
+		else
 		{
-			bs.Read(timestamp);
+			RakNet::BitStream bs(packet->data, packet->length, false);
+			unsigned char msgid = 0;
+			RakNet::Time timestamp = 0;
+
 			bs.Read(msgid);
+
+			if (msgid == ID_TIMESTAMP)
+			{
+				bs.Read(timestamp);
+				bs.Read(msgid);
+			}
+
+			switch (msgid)
+			{
+				case ID_NEW_INCOMING_CONNECTION:
+					if (NumofPlayers < 2)
+						SendWelcomePackage(packet->systemAddress);
+					else
+						SendRejectPackage(packet->systemAddress);
+					break;
+
+				case ID_DISCONNECTION_NOTIFICATION:
+				case ID_CONNECTION_LOST:
+					SendDisconnectionNotification(packet->systemAddress);
+					break;
+
+				case ID_MESSAGE:
+					{
+						bs.ResetReadPointer();
+						rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE, 0, packet->systemAddress, true);
+					}
+					break;
+				case ID_KEYEXCHANGE:
+					{
+						//std::cout << "I RECEVE KEYEXCHANGE 1" << std::endl;
+						int i;
+						bs.Read(i);
+						//	i = ntohl(i);
+						bs.ResetReadPointer();
+						RakNet::BitStream bs2;
+						unsigned char ID = ID_KEYEXCHANGE;
+						bs2.Write(ID);
+						int a = Key.CreatePublicKey(Key.p_number, i, Key.random);
+						bs2.Write(a);
+						rakpeer_->Send(&bs2, HIGH_PRIORITY, RELIABLE, 0, packet->systemAddress, true);
+					}
+					break;
+				case ID_KEYEXCHANGETWO:
+					{
+						bs.ResetReadPointer();
+						rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE, 0, packet->systemAddress, true);
+					}
+					break;
+				case ID_KEYEXCHANGETHREE:
+					{
+						time_t timer;
+						timer = time(NULL);
+						srand(time(&timer));
+						int i;
+						bs.Read(i);
+						Key.SharedSecretKey(Key.p_number, Key.random, i);
+						std::cout << "KEY: " << Key.GetSecretKey() << std::endl;
+					}
+					break;
+				default:
+					break;
+					//std::cout << "Unhandled Message Identifier: " << (int)msgid << std::endl;
+			}
+
+			rakpeer_->DeallocatePacket(packet);
 		}
-
-		switch (msgid)
-		{
-			case ID_NEW_INCOMING_CONNECTION:
-				if (NumofPlayers < 2)
-					SendWelcomePackage(packet->systemAddress);
-				else
-					SendRejectPackage(packet->systemAddress);
-				break;
-
-			case ID_DISCONNECTION_NOTIFICATION:
-			case ID_CONNECTION_LOST:
-				SendDisconnectionNotification(packet->systemAddress);
-				break;
-
-			case ID_MESSAGE:
-				{
-					bs.ResetReadPointer();
-					rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE, 0, packet->systemAddress, true);
-				}
-				break;
-			case ID_KEYEXCHANGE:
-				{
-					//std::cout << "I RECEVE KEYEXCHANGE 1" << std::endl;
-					float i;
-					bs.Read(i);
-					i = ntohl(i);
-					bs.ResetReadPointer();
-					
-					RakNet::BitStream bs2;
-					unsigned char ID = ID_KEYEXCHANGE;
-					bs2.Write(ID);
-					int a = Key.CreatePublicKey(Key.p_number, i, Key.random);
-					bs2.Write(a);
-					rakpeer_->Send(&bs2, HIGH_PRIORITY, RELIABLE, 0, packet->systemAddress, true);
-				}
-				break;
-			case ID_KEYEXCHANGETWO:
-				{
-					bs.ResetReadPointer();
-					rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE, 0, packet->systemAddress, true);
-				}
-				break;
-			case ID_KEYEXCHANGETHREE:
-				{
-					time_t timer;
-					timer = time(NULL);
-					srand(time(&timer));
-					float i;
-					bs.Read(i);
-					Key.SharedSecretKey(Key.p_number, Key.random, i);
-					std::cout <<"KEY: " <<  Key.GetSecretKey() << std::endl;
-				}
-				break;
-			default:
-				break;
-			//std::cout << "Unhandled Message Identifier: " << (int)msgid << std::endl;
-		}
-
-		rakpeer_->DeallocatePacket(packet);
 	}
 }
 

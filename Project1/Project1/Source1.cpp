@@ -31,7 +31,9 @@ int main()
 	int KeyB = Alice.SharedSecretKey(Alice.p_number, Alice.random, PubB);
 
 
+	int i = (sizeof(int)*CHAR_BIT - 1) / 3 + 3;
 	cout << "Pub Key Sent around A is : " << PubA << " B is: " << PubB << " : C is " << PubC << endl;
 	cout << "Secret Key from A is: " << KeyA << " : B is " << KeyB <<  " : C is " <<  KeyC << endl;
 	system("pause");
+
 }

@@ -18,6 +18,7 @@ public:
 	int CreatePublicKey(int pn, int gn, int s_key);
 	int SharedSecretKey(int pn, int s_key, int pub_key);
 	int GetSecretKey();
+	char * GetSecretKeyC();
 
 	int64_t is_prime(int64_t);
 	int64_t get_prime_number(int64_t);

@@ -89,3 +89,10 @@ int DiffieHelmanKey::GetSecretKey()
 {
 	return SecretKey;
 }
+
+char * DiffieHelmanKey::GetSecretKeyC()
+{
+	char c[(sizeof(int)*CHAR_BIT - 1) / 3 + 3];
+	sprintf_s(c, "%i", SecretKey);
+	return c;
+}
